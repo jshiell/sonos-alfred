@@ -59,3 +59,15 @@ func TestEnqueueNextInsertsAfterTheCurrentTrack(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestEnqueueNextAppendsWhenTheGroupIsPlayingAStream(t *testing.T) {
+	onStream := recorded(t, "GetMediaInfo", 0) // CurrentURI x-rincon-mp3radio://...: no queue position
+	appendAlbum := recorded(t, "AddURIToQueue", 1)
+	args := argsOf(t, appendAlbum.Request)
+	nier := sonos.Item{URI: args[1].Value, Metadata: args[2].Value}
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, onStream, appendAlbum)
+
+	if err := sonos.NewClient(speaker.URL).EnqueueNext(context.Background(), nier); err != nil {
+		t.Fatal(err)
+	}
+}
