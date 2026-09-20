@@ -85,3 +85,15 @@ func TestDoSkipsToTheNextTrack(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoGoesBackToThePreviousTrack(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t, fakespeaker.AVTransport("Previous", "<InstanceID>0</InstanceID>"))
+
+	if err := app.Do(context.Background(), w.env, "previous:"); err != nil {
+		t.Fatal(err)
+	}
+}

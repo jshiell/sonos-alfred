@@ -14,6 +14,7 @@ type Backend interface {
 	Play(ctx context.Context) error
 	Pause(ctx context.Context) error
 	Next(ctx context.Context) error
+	Previous(ctx context.Context) error
 	PlayingFromQueue(ctx context.Context) (bool, error)
 	GroupVolume(ctx context.Context) (int, error)
 	PlayMode(ctx context.Context) (PlayMode, error)
