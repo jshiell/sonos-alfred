@@ -122,10 +122,21 @@ Nothing was played or changed; live playback/enqueue/volume tests still need you
 - `resMD` is double-escaped inside `Browse`'s `Result`, as expected; the `Trending Now` `resMD` has an empty `dc:title` and an `id`/`parentID` that differ in case, so favorite titles must come from the outer item, not `resMD`.
 - Fixtures: `testdata/browse-favorites-sonos-radio-shortcuts.xml`, `browse-playlists-empty.xml`, `browse-queue-apple-music.xml` (the queue fixture contains your listening history).
 
-### Open decisions from the spikes
-1. Favorites/Playlists are nearly empty on this household. Add real favorites (an Apple Music album/playlist, a radio station), spike playing the existing shortcuts, or rescope v1?
-2. Live S2 tests need consent: which room may play audibly, and at what volume ceiling?
-3. Group-volume snapshot test needs two rooms grouped by you in the Sonos app (all 6 groups are single-member now).
+### S2 (live, Dining Room) — playback, queue, volume (2026-09-20)
+Run on Dining Room (`192.0.2.29`) with your consent; volume stayed 12–14 and was restored (also queue source, play mode, sleep timer). Its queue was replaced (1 → 151 tracks). You added two Apple Music album favorites; `FV:2` now has 4 items.
+- **Favorite shapes.** Apple Music albums are `r:type=instantPlay` with a real `<res>` (`x-rincon-cpcontainer:…?sid=204&flags=8300&sn=5`) plus `resMD` (an `object.container.album.musicAlbum`). Sonos Radio items are `r:type=shortcut` with an empty `<res>`.
+- **2.8a Replace-and-play (container) CONFIRMED:** `RemoveAllTracksFromQueue` → `AddURIToQueue(res, resMD, 0, 0)` (returned `FirstTrackNumberEnqueued=1, NumTracksAdded=12`) → `SetAVTransportURI(x-rincon-queue:<uid>#0)` → `Play`; playing within ~2 s. `AddURIToQueue` takes ~0.6 s for an album.
+- **2.9a Enqueue at end CONFIRMED:** `EnqueueAsNext=0, DesiredFirstTrackNumberEnqueued=0` appends (`FirstTrackNumberEnqueued=13` on a 12-track queue).
+- **2.9b Play next needs the current track number:** `EnqueueAsNext=1` + `DesiredFirstTrackNumberEnqueued=<current+1>` lands right after the current track (returned 2). **`EnqueueAsNext=1` with desired `0` APPENDED at the end (105), not next.** So `do` must read the current track (`GetPositionInfo`) first. Behaviour when the group is on a stream (no queue position) is undecided: fall back to enqueue at end.
+- **2.10 Queue jump CONFIRMED while on a stream:** a bare `Seek TRACK_NR` fails with HTTP 500, UPnP errorCode **701**; `SetAVTransportURI(x-rincon-queue:<uid>#0)` → `Seek TRACK_NR=3` → `Play` landed on track 3.
+- **Radio enqueue (partial):** enqueuing a raw `x-rincon-mp3radio://…` URI with empty metadata **succeeded** (no fault). This is only a proxy: you have no playable Sonos Radio favorite, so the "radio favorite can't be enqueued (fault 800)" question is still unanswered for real service-based radio. The ⌘/⌥ degradation in 4.4 stays "decided from S2", and S2 says: allow it for URI-based streams, undecided for others.
+- **Sonos Radio shortcuts are NOT playable via UPnP as tried:** (1) `SetAVTransportURI` with an empty URI + `resMD` returns 200 but leaves the group with no media (`NrTracks 0`, `Play` → 701); (2) a guessed `x-sonosapi-radio:sd%3aUK%3atrending-now?sid=303&flags=8300&sn=0` via `AddURIToQueue` → errorCode **800** (a wrong guess proves nothing). **Decision needed: treat `shortcut` favorites as not playable in v1** (hide, or show as invalid), unless you want a further spike.
+- **Play mode CONFIRMED:** `SetPlayMode SHUFFLE` reads back `SHUFFLE`; `SHUFFLE_NOREPEAT` and `NORMAL` also round-trip via `GetTransportSettings`.
+- **Sleep timer CONFIRMED:** `ConfigureSleepTimer 00:15:00` → `GetRemainingSleepTimerDuration` `00:15:00` (generation 1); `ConfigureSleepTimer ""` → remaining `""` (generation 0).
+- **Group volume (single-member group):** `SetRelativeGroupVolume(+2)` → `NewVolume 14`; `(-2)` → `12`; `SetGroupVolume 12` OK; group and member volume agree.
+- **Playlists:** `SQ:` is empty here. The Playlists section will be empty for this household.
+- Fixtures: `testdata/browse-favorites-albums-and-shortcuts.xml` (replaces the earlier favorites fixture) and `testdata/s2-dining-room-exchanges.jsonl` (the exact requests the speaker accepted, plus the 701 fault; the spike escapes values with Go's `html.EscapeString`, so `'` becomes `&#39;`).
+- **Still open:** the `SnapshotGroupVolume` question (unverified #3) needs two rooms grouped and members at different volumes (needs you), and SSDP timing.
 
 ## Out of scope for v1
 SMAPI search (needs its own spike incl. Apple Music auth), grouping/scenes, line-in/TV, TTS/announcements, Universal Actions, cloud Control API, EQ/alarms, amd64, updates/notarization.
