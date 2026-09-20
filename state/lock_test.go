@@ -23,3 +23,15 @@ func TestRefreshLockRefusesASecondHolderWhileHeld(t *testing.T) {
 		t.Error("second TryAcquire = true while the lock is held, want false")
 	}
 }
+
+func TestRefreshLockCanBeTakenAgainOnceReleased(t *testing.T) {
+	dir := t.TempDir()
+	clk := newClock()
+	release, _ := state.NewRefreshLock(dir, clk.Now, lockStaleAfter).TryAcquire()
+
+	release()
+
+	if _, again := state.NewRefreshLock(dir, clk.Now, lockStaleAfter).TryAcquire(); !again {
+		t.Error("TryAcquire = false after release, want true")
+	}
+}
