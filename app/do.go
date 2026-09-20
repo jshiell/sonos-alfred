@@ -54,6 +54,12 @@ func Do(ctx context.Context, env Env, encoded string) error {
 			return fmt.Errorf("bad volume %q", action.Payload)
 		}
 		return speaker.SetGroupVolume(ctx, volume)
+	case "play-item":
+		item, err := hub.ParseItemPayload(action.Payload)
+		if err != nil {
+			return err
+		}
+		return speaker.ReplaceAndPlay(ctx, group.Coordinator.UUID, item)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }

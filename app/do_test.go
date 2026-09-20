@@ -121,3 +121,37 @@ func TestDoSetsTheGroupVolume(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// rowsFor is the rows the hub shows for a household with these favorites.
+func rowsFor(favorites ...sonos.Item) []hub.Item {
+	return hub.Items(hub.State{Favorites: favorites}, "")
+}
+
+func rowTitled(t *testing.T, rows []hub.Item, title string) hub.Item {
+	t.Helper()
+	for _, row := range rows {
+		if row.Title == title {
+			return row
+		}
+	}
+	t.Fatalf("no row titled %q", title)
+	return hub.Item{}
+}
+
+var somaFM = sonos.Item{Title: "Groove Salad", URI: "x-rincon-mp3radio://ice1.somafm.com/groovesalad-128-mp3"}
+
+func TestDoPlaysAFavoriteStreamDirectly(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t,
+		fakespeaker.Recorded(t, "SetAVTransportURI", 1), // the SomaFM stream, no metadata
+		fakespeaker.Recorded(t, "Play", 1),
+	)
+	enter := hub.Encode(rowTitled(t, rowsFor(somaFM), "Groove Salad").Enter)
+
+	if err := app.Do(context.Background(), w.env, enter); err != nil {
+		t.Fatal(err)
+	}
+}
