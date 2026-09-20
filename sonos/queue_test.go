@@ -24,3 +24,14 @@ func TestReplaceAndPlayReplacesTheQueueWithTheItemAndPlaysIt(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestReplaceAndPlayPlaysAStreamDirectlyWithoutTouchingTheQueue(t *testing.T) {
+	setStream := recorded(t, "SetAVTransportURI", 1) // x-rincon-mp3radio://ice1.somafm.com/..., empty metadata
+	args := argsOf(t, setStream.Request)             // InstanceID, CurrentURI, CurrentURIMetaData
+	stream := sonos.Item{URI: args[1].Value, Metadata: args[2].Value}
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, setStream, recorded(t, "Play", 1))
+
+	if err := sonos.NewClient(speaker.URL).ReplaceAndPlay(context.Background(), diningRoomUUID, stream); err != nil {
+		t.Fatal(err)
+	}
+}
