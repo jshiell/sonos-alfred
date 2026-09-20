@@ -59,3 +59,23 @@ func TestCallReturnsTypedFaultWithUPnPErrorCode(t *testing.T) {
 		t.Errorf("fault code = %d, want 701", fault.Code)
 	}
 }
+
+func TestCallEscapesArgumentsExactlyAsTheSpeakerAccepted(t *testing.T) {
+	addAlbum := recorded(t, "AddURIToQueue", 0)
+	speaker := fakespeaker.New(t, fakespeaker.Exchange{
+		Path:       "/MediaRenderer/AVTransport/Control",
+		SOAPAction: `"urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"`,
+		Body:       addAlbum.Request,
+		Respond:    fakespeaker.Response{Status: http.StatusOK, Body: addAlbum.Response},
+	})
+	client := sonos.NewClient(speaker.URL)
+
+	values, err := client.Call(context.Background(), sonos.AVTransport, "AddURIToQueue", argsOf(t, addAlbum.Request)...)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if values["NumTracksAdded"] != "12" {
+		t.Errorf("NumTracksAdded = %q, want 12", values["NumTracksAdded"])
+	}
+}

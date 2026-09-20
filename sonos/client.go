@@ -45,7 +45,9 @@ func (c *Client) Call(ctx context.Context, service Service, action string, args 
 	body.WriteString(`<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>`)
 	body.WriteString(`<u:` + action + ` xmlns:u="` + service.urn + `">`)
 	for _, arg := range args {
-		body.WriteString("<" + arg.Name + ">" + arg.Value + "</" + arg.Name + ">")
+		body.WriteString("<" + arg.Name + ">")
+		_ = xml.EscapeText(&body, []byte(arg.Value))
+		body.WriteString("</" + arg.Name + ">")
 	}
 	body.WriteString(`</u:` + action + `></s:Body></s:Envelope>`)
 
