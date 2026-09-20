@@ -97,3 +97,15 @@ func TestDoGoesBackToThePreviousTrack(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoChangesTheGroupVolumeByTheStep(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t, fakespeaker.Recorded(t, "SetRelativeGroupVolume", 3)) // Adjustment -5
+
+	if err := app.Do(context.Background(), w.env, "volume-change:-5"); err != nil {
+		t.Fatal(err)
+	}
+}

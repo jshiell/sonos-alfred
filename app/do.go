@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"sonos-alfred/hub"
 	"sonos-alfred/sonos"
@@ -40,6 +41,13 @@ func Do(ctx context.Context, env Env, encoded string) error {
 		return speaker.Next(ctx)
 	case "previous":
 		return speaker.Previous(ctx)
+	case "volume-change":
+		step, err := strconv.Atoi(action.Payload)
+		if err != nil {
+			return fmt.Errorf("bad volume step %q", action.Payload)
+		}
+		_, err = speaker.ChangeGroupVolume(ctx, step)
+		return err
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }
