@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -233,5 +234,19 @@ func TestFilterAsksForRerunsAgainAfterAPauseInWhichAlfredWasClosed(t *testing.T)
 
 	if got := runFilter(t, w, ""); got.Rerun == 0 {
 		t.Error("rerun unset after a long pause, want a fresh set of reruns")
+	}
+}
+
+func TestFilterDoesNotRerunWhenTheRerunsCannotBeCounted(t *testing.T) {
+	w := newWorkflow(t)
+	if err := os.Chmod(w.env.Dir, 0o500); err != nil { // nothing can be written
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(w.env.Dir, 0o700) })
+
+	got := runFilter(t, w, "")
+
+	if got.Rerun != 0 {
+		t.Errorf("rerun = %v with no way to count reruns, want none", got.Rerun)
 	}
 }
