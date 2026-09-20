@@ -10,6 +10,7 @@ import (
 type Backend interface {
 	Topology(ctx context.Context) (Topology, error)
 	NowPlaying(ctx context.Context) (NowPlaying, error)
+	TransportState(ctx context.Context) (TransportState, error)
 	PlayingFromQueue(ctx context.Context) (bool, error)
 	GroupVolume(ctx context.Context) (int, error)
 	PlayMode(ctx context.Context) (PlayMode, error)

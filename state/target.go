@@ -5,10 +5,10 @@ import "sonos-alfred/sonos"
 // ResolveTarget picks the group to control: the one the stored player is in now, else the group that is playing,
 // else the first group. playingCoordinatorUUID is "" when nothing is playing.
 func ResolveTarget(topology sonos.Topology, storedPlayerUUID, playingCoordinatorUUID string) (sonos.Group, bool) {
-	if group, found := groupContaining(topology, storedPlayerUUID); found {
+	if group, found := GroupContaining(topology, storedPlayerUUID); found {
 		return group, true
 	}
-	if group, found := groupContaining(topology, playingCoordinatorUUID); found {
+	if group, found := GroupContaining(topology, playingCoordinatorUUID); found {
 		return group, true
 	}
 	if len(topology.Groups) > 0 {
@@ -17,7 +17,8 @@ func ResolveTarget(topology sonos.Topology, storedPlayerUUID, playingCoordinator
 	return sonos.Group{}, false
 }
 
-func groupContaining(topology sonos.Topology, playerUUID string) (sonos.Group, bool) {
+// GroupContaining returns the group the player is in.
+func GroupContaining(topology sonos.Topology, playerUUID string) (sonos.Group, bool) {
 	for _, group := range topology.Groups {
 		for _, member := range group.Members {
 			if member.UUID == playerUUID {

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"sonos-alfred/hub"
+	"sonos-alfred/sonos"
 	"sonos-alfred/state"
 )
 
@@ -33,9 +34,9 @@ func readHousehold(ctx context.Context, env Env) (hub.State, error) {
 	if err != nil {
 		return hub.State{}, err
 	}
-	group, found := state.ResolveTarget(topology, state.NewSettings(env.Dir).ActiveGroup(), "")
-	if !found {
-		return hub.State{}, errors.New("the household has no speakers")
+	group, err := targetGroup(ctx, env, topology)
+	if err != nil {
+		return hub.State{}, err
 	}
 
 	current := hub.State{Topology: topology, Target: group.Coordinator.UUID}
@@ -56,4 +57,35 @@ func readHousehold(ctx context.Context, env Env) (hub.State, error) {
 		}
 	}
 	return current, nil
+}
+
+// targetGroup is the group to control: the chosen room's group, else whichever group is playing.
+func targetGroup(ctx context.Context, env Env, topology sonos.Topology) (sonos.Group, error) {
+	chosen := state.NewSettings(env.Dir).ActiveGroup()
+	playing := ""
+	if _, found := state.GroupContaining(topology, chosen); !found {
+		var err error
+		if playing, err = playingCoordinator(ctx, env, topology); err != nil {
+			return sonos.Group{}, err
+		}
+	}
+	group, found := state.ResolveTarget(topology, chosen, playing)
+	if !found {
+		return sonos.Group{}, errors.New("the household has no speakers")
+	}
+	return group, nil
+}
+
+// playingCoordinator is the UUID of the first group's coordinator that is playing, or "" when none is.
+func playingCoordinator(ctx context.Context, env Env, topology sonos.Topology) (string, error) {
+	for _, group := range topology.Groups {
+		transport, err := env.Connect(group.Coordinator.Host).TransportState(ctx)
+		if err != nil {
+			return "", err
+		}
+		if transport == sonos.StatePlaying {
+			return group.Coordinator.UUID, nil
+		}
+	}
+	return "", nil
 }
