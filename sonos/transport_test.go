@@ -46,3 +46,11 @@ func TestNextSendsNextToTheSpeaker(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPreviousSendsPreviousToTheSpeaker(t *testing.T) {
+	speaker := avTransportSpeaker(t, "Previous", "<InstanceID>0</InstanceID>")
+
+	if err := sonos.NewClient(speaker.URL).Previous(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}

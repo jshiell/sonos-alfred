@@ -19,3 +19,9 @@ func (c *Client) Next(ctx context.Context) error {
 	_, err := c.Call(ctx, AVTransport, "Next", Arg{"InstanceID", "0"})
 	return err
 }
+
+// Previous returns to the previous track.
+func (c *Client) Previous(ctx context.Context) error {
+	_, err := c.Call(ctx, AVTransport, "Previous", Arg{"InstanceID", "0"})
+	return err
+}
