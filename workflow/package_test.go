@@ -101,19 +101,33 @@ func readInfo(t *testing.T, archive *zip.ReadCloser) info {
 	return parsed
 }
 
+func assertConfig(t *testing.T, got map[string]any, want map[string]any) {
+	t.Helper()
+	for key, wanted := range want {
+		if got[key] != wanted {
+			t.Errorf("%s = %v, want %v", key, got[key], wanted)
+		}
+	}
+}
+
 func TestScriptFilterOnSonRunsFilterWithTheQueryAndLeavesFilteringToTheBinary(t *testing.T) {
 	filter := readInfo(t, packageWorkflow(t)).config(t, "alfred.workflow.input.scriptfilter")
 
-	want := map[string]any{
+	assertConfig(t, filter, map[string]any{
 		"keyword":              "son",
 		"type":                 11.0, // an inline script rather than a script file
 		"script":               `./sonos-alfred filter "$1"`,
 		"scriptargtype":        1.0, // the query arrives as $1
 		"alfredfiltersresults": false,
-	}
-	for key, wanted := range want {
-		if filter[key] != wanted {
-			t.Errorf("%s = %v, want %v", key, filter[key], wanted)
-		}
-	}
+	})
+}
+
+func TestChoosingARowRunsDoWithItsAction(t *testing.T) {
+	run := readInfo(t, packageWorkflow(t)).config(t, "alfred.workflow.action.script")
+
+	assertConfig(t, run, map[string]any{
+		"type":          11.0,
+		"script":        `./sonos-alfred do "$1"`,
+		"scriptargtype": 1.0,
+	})
 }
