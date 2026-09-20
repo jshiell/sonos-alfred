@@ -81,6 +81,12 @@ func Do(ctx context.Context, env Env, encoded string) error {
 			return fmt.Errorf("bad queue position %q", action.Payload)
 		}
 		return speaker.JumpToQueueTrack(ctx, group.Coordinator.UUID, track)
+	case "shuffle":
+		mode, err := speaker.PlayMode(ctx)
+		if err != nil {
+			return err
+		}
+		return speaker.SetPlayMode(ctx, mode.ToggleShuffle())
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }

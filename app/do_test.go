@@ -239,3 +239,18 @@ func TestDoSendsLaterActionsToTheChosenRoomBeforeTheCacheCatchesUp(t *testing.T)
 		t.Errorf("connected to %v, want the Kitchen coordinator %v", *hosts, want)
 	}
 }
+
+func TestDoTurnsShuffleOnFromTheLiveSetting(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t,
+		fakespeaker.Recorded(t, "GetTransportSettings", 2), // NORMAL
+		fakespeaker.Recorded(t, "SetPlayMode", 1),          // SHUFFLE_NOREPEAT
+	)
+
+	if err := app.Do(context.Background(), w.env, "shuffle:"); err != nil {
+		t.Fatal(err)
+	}
+}
