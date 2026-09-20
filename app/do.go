@@ -13,11 +13,19 @@ import (
 )
 
 // Do performs an action, as Alfred passes it from a row's arg, on the coordinator of the group being controlled.
+// Afterwards the cached state is stale, so the next filter refreshes it.
 func Do(ctx context.Context, env Env, encoded string) error {
 	action, err := hub.Decode(encoded)
 	if err != nil {
 		return err
 	}
+	if err := perform(ctx, env, action); err != nil {
+		return err
+	}
+	return state.NewCache(env.Dir, env.Now).Expire(StateEntry)
+}
+
+func perform(ctx context.Context, env Env, action hub.Action) error {
 	if action.Verb == "room" {
 		return state.NewSettings(env.Dir).SetActiveGroup(action.Payload)
 	}

@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"sonos-alfred/app"
 	"sonos-alfred/hub"
@@ -291,5 +292,26 @@ func TestDoCancelsTheSleepTimer(t *testing.T) {
 
 	if err := app.Do(context.Background(), w.env, "sleep-cancel:"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestDoExpiresTheCacheAfterAChangeSoTheNextFilterRefreshes(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t, fakespeaker.AVTransport("Next", "<InstanceID>0</InstanceID>"))
+
+	if err := app.Do(context.Background(), w.env, "next:"); err != nil {
+		t.Fatal(err)
+	}
+
+	var fresh hub.State
+	if w.cache.Read(app.StateEntry, 24*time.Hour, &fresh) {
+		t.Error("the cache is still fresh after a change, want it expired")
+	}
+	var kept hub.State
+	if _, found := w.cache.ReadWithAge(app.StateEntry, &kept); !found || kept.Target != diningRoomUUID {
+		t.Errorf("expired state found=%v target=%q, want the old state kept for rendering", found, kept.Target)
 	}
 }
