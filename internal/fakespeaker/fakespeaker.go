@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sync"
+	"testing"
 )
 
 // Response is what the speaker answers with.
@@ -36,6 +37,19 @@ type Speaker struct {
 func NewUnchecked(script ...Exchange) *Speaker {
 	s := &Speaker{script: script}
 	s.Server = httptest.NewServer(http.HandlerFunc(s.serve))
+	return s
+}
+
+// New starts a speaker and fails the test at cleanup if the script was not followed exactly.
+func New(t testing.TB, script ...Exchange) *Speaker {
+	t.Helper()
+	s := NewUnchecked(script...)
+	t.Cleanup(func() {
+		s.Close()
+		for _, problem := range s.Verify() {
+			t.Errorf("fake speaker: %s", problem)
+		}
+	})
 	return s
 }
 

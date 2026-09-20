@@ -1,6 +1,7 @@
 package fakespeaker_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -105,5 +106,37 @@ func TestVerifyReportsScriptedExchangesThatNeverHappened(t *testing.T) {
 
 	if problems := speaker.Verify(); len(problems) != 0 {
 		t.Errorf("after the Play request: unexpected problems %v", problems)
+	}
+}
+
+// recordingT stands in for *testing.T so the test can observe what New reports at cleanup.
+type recordingT struct {
+	testing.TB
+	errors   []string
+	cleanups []func()
+}
+
+func (r *recordingT) Helper() {}
+
+func (r *recordingT) Errorf(format string, args ...any) {
+	r.errors = append(r.errors, fmt.Sprintf(format, args...))
+}
+
+func (r *recordingT) Cleanup(f func()) { r.cleanups = append(r.cleanups, f) }
+
+func (r *recordingT) runCleanups() {
+	for i := len(r.cleanups) - 1; i >= 0; i-- {
+		r.cleanups[i]()
+	}
+}
+
+func TestNewFailsTheTestAtCleanupWhenTheScriptWasNotFollowed(t *testing.T) {
+	rt := &recordingT{}
+	fakespeaker.New(rt, playExchange())
+
+	rt.runCleanups()
+
+	if len(rt.errors) != 1 {
+		t.Errorf("reported %d errors, want 1 (the Play that never happened): %v", len(rt.errors), rt.errors)
 	}
 }
