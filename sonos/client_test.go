@@ -2,6 +2,7 @@ package sonos_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -33,5 +34,28 @@ func TestCallSendsSOAPRequestAndParsesResponseValues(t *testing.T) {
 		if values[name] != wantValue {
 			t.Errorf("%s = %q, want %q", name, values[name], wantValue)
 		}
+	}
+}
+
+func TestCallReturnsTypedFaultWithUPnPErrorCode(t *testing.T) {
+	const seekRequest = `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID><Unit>TRACK_NR</Unit><Target>3</Target></u:Seek></s:Body></s:Envelope>`
+	const fault701 = `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><s:Fault><faultcode>s:Client</faultcode><faultstring>UPnPError</faultstring><detail><UPnPError xmlns="urn:schemas-upnp-org:control-1-0"><errorCode>701</errorCode></UPnPError></detail></s:Fault></s:Body></s:Envelope>`
+	speaker := fakespeaker.New(t, fakespeaker.Exchange{
+		Path:       "/MediaRenderer/AVTransport/Control",
+		SOAPAction: `"urn:schemas-upnp-org:service:AVTransport:1#Seek"`,
+		Body:       seekRequest,
+		Respond:    fakespeaker.Response{Status: http.StatusInternalServerError, Body: fault701},
+	})
+	client := sonos.NewClient(speaker.URL)
+
+	_, err := client.Call(context.Background(), sonos.AVTransport, "Seek",
+		sonos.Arg{Name: "InstanceID", Value: "0"}, sonos.Arg{Name: "Unit", Value: "TRACK_NR"}, sonos.Arg{Name: "Target", Value: "3"})
+
+	var fault *sonos.Fault
+	if !errors.As(err, &fault) {
+		t.Fatalf("error = %v, want a *sonos.Fault", err)
+	}
+	if fault.Code != 701 {
+		t.Errorf("fault code = %d, want 701", fault.Code)
 	}
 }

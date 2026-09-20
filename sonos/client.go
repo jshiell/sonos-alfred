@@ -4,6 +4,7 @@ package sonos
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -60,7 +61,27 @@ func (c *Client) Call(ctx context.Context, service Service, action string, args 
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, faultFrom(resp)
+	}
 	return parseResponseValues(resp.Body)
+}
+
+// Fault is a SOAP fault returned by a speaker. Code is the UPnP error code.
+type Fault struct {
+	Code int
+}
+
+func (f *Fault) Error() string { return fmt.Sprintf("speaker returned UPnP error %d", f.Code) }
+
+func faultFrom(resp *http.Response) error {
+	var envelope struct {
+		Code int `xml:"Body>Fault>detail>UPnPError>errorCode"`
+	}
+	if err := xml.NewDecoder(resp.Body).Decode(&envelope); err != nil {
+		return fmt.Errorf("speaker returned HTTP %d", resp.StatusCode)
+	}
+	return &Fault{Code: envelope.Code}
 }
 
 // parseResponseValues returns the text of each element directly inside the response element.
