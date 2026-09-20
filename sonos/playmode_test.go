@@ -90,3 +90,13 @@ func TestCycleRepeatGoesOffAllOneAndKeepsShuffle(t *testing.T) {
 		})
 	}
 }
+
+func TestSetPlayModeSendsTheWireValue(t *testing.T) {
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, recorded(t, "SetPlayMode", 0)) // NewPlayMode SHUFFLE
+
+	err := sonos.NewClient(speaker.URL).SetPlayMode(context.Background(), sonos.PlayMode{Shuffle: true, Repeat: sonos.RepeatAll})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}

@@ -71,3 +71,9 @@ func (m PlayMode) CycleRepeat() PlayMode {
 	}
 	return m
 }
+
+// SetPlayMode sets the group's shuffle and repeat settings.
+func (c *Client) SetPlayMode(ctx context.Context, mode PlayMode) error {
+	_, err := c.Call(ctx, AVTransport, "SetPlayMode", Arg{"InstanceID", "0"}, Arg{"NewPlayMode", mode.String()})
+	return err
+}
