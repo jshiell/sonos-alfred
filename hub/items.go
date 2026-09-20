@@ -50,7 +50,7 @@ func Items(state State, query string) []Item {
 	for _, room := range roomsByName(state.Topology, state.Target) {
 		items = append(items, roomRow(room))
 	}
-	items = append(items, shuffleRow(state.PlayMode))
+	items = append(items, shuffleRow(state.PlayMode), repeatRow(state.PlayMode))
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)
 	}
@@ -186,4 +186,9 @@ func shuffleRow(mode sonos.PlayMode) Item {
 		title = "Shuffle: on"
 	}
 	return Item{Title: title, Valid: true, Enter: Action{Verb: "shuffle"}}
+}
+
+func repeatRow(mode sonos.PlayMode) Item {
+	setting := map[sonos.Repeat]string{sonos.RepeatOff: "off", sonos.RepeatAll: "all", sonos.RepeatOne: "one"}[mode.Repeat]
+	return Item{Title: "Repeat: " + setting, Valid: true, Enter: Action{Verb: "repeat"}}
 }

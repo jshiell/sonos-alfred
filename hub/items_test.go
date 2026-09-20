@@ -326,10 +326,21 @@ func TestShuffleRowFollowsTheRoomsShowsTheModeAndTogglesOnEnter(t *testing.T) {
 			if !row.Valid || row.Enter != (hub.Action{Verb: "shuffle"}) {
 				t.Errorf("Enter = %+v (valid %v), want shuffle", row.Enter, row.Valid)
 			}
-			got := titles(items)
-			if got[len(got)-1] != want || got[len(got)-2] != "Office" {
-				t.Errorf("titles = %v, want the shuffle row straight after the rooms", got)
+			assertRowsInOrder(t, items, "Office", want)
+		})
+	}
+}
+
+func TestRepeatRowFollowsShuffleShowsTheModeAndCyclesOnEnter(t *testing.T) {
+	for repeat, want := range map[sonos.Repeat]string{sonos.RepeatOff: "Repeat: off", sonos.RepeatAll: "Repeat: all", sonos.RepeatOne: "Repeat: one"} {
+		t.Run(want, func(t *testing.T) {
+			items := hub.Items(hub.State{PlayMode: sonos.PlayMode{Repeat: repeat}}, "")
+
+			row := findItem(t, items, want)
+			if !row.Valid || row.Enter != (hub.Action{Verb: "repeat"}) {
+				t.Errorf("Enter = %+v (valid %v), want repeat", row.Enter, row.Valid)
 			}
+			assertRowsInOrder(t, items, "Shuffle: off", want)
 		})
 	}
 }
