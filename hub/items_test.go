@@ -168,3 +168,17 @@ func TestFavoriteReplacesOnEnterAddsOnCmdAndPlaysNextOnAlt(t *testing.T) {
 	assertItemAction(t, "Cmd", *row.Cmd, "add-item", album)
 	assertItemAction(t, "Alt", *row.Alt, "play-next-item", album)
 }
+
+func TestFavoritesWithNothingToPlayAreHidden(t *testing.T) {
+	album := sonos.Item{Title: "Niero:Atlas", URI: "x-rincon-cpcontainer:1004206c"}
+	radioShortcut := sonos.Item{Title: "Discover Sonos Radio", URI: ""}
+
+	got := titles(hub.Items(hub.State{Favorites: []sonos.Item{radioShortcut, album}}, ""))
+
+	for _, title := range got {
+		if title == "Discover Sonos Radio" {
+			t.Errorf("shortcut favorite is shown: %v", got)
+		}
+	}
+	findItem(t, hub.Items(hub.State{Favorites: []sonos.Item{radioShortcut, album}}, ""), "Niero:Atlas")
+}

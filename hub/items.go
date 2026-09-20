@@ -30,6 +30,9 @@ type Item struct {
 func Items(state State, query string) []Item {
 	items := []Item{nowPlayingRow(state.NowPlaying), volumeRow(state.Volume)}
 	for _, favorite := range state.Favorites {
+		if favorite.URI == "" { // Sonos Radio shortcuts carry nothing the speaker can be told to play
+			continue
+		}
 		items = append(items, playableRow(favorite))
 	}
 	if setVolume, ok := setVolumeRow(query); ok {
