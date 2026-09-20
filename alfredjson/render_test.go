@@ -55,3 +55,14 @@ func TestRenderDisablesModifiersTheRowHasNoActionFor(t *testing.T) {
 		"mods": {"cmd": {"valid": false}, "alt": {"valid": false}}
 	}]}`)
 }
+
+func TestRenderGivesRowsThatCannotBeActedOnNoArgAndNoMods(t *testing.T) {
+	items := []hub.Item{{Title: "Can't reach Sonos", Subtitle: "Check the speakers"}}
+
+	got, err := alfredjson.Render(items, false)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertJSON(t, got, `{"items":[{"title": "Can't reach Sonos", "subtitle": "Check the speakers", "valid": false}]}`)
+}

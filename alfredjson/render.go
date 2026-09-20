@@ -28,9 +28,17 @@ type mod struct {
 func Render(items []hub.Item, refreshPending bool) ([]byte, error) {
 	var out response
 	for _, row := range items {
-		rendered := item{Title: row.Title, Subtitle: row.Subtitle, Arg: hub.Encode(row.Enter), Valid: row.Valid}
-		rendered.Mods = map[string]mod{"cmd": modFor(row.Cmd), "alt": modFor(row.Alt)}
-		out.Items = append(out.Items, rendered)
+		if !row.Valid {
+			out.Items = append(out.Items, item{Title: row.Title, Subtitle: row.Subtitle})
+			continue
+		}
+		out.Items = append(out.Items, item{
+			Title:    row.Title,
+			Subtitle: row.Subtitle,
+			Arg:      hub.Encode(row.Enter),
+			Valid:    true,
+			Mods:     map[string]mod{"cmd": modFor(row.Cmd), "alt": modFor(row.Alt)},
+		})
 	}
 	return json.Marshal(out)
 }
