@@ -1,6 +1,8 @@
 package state_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -49,5 +51,39 @@ func TestCacheTreatsAStaleValueAsAMiss(t *testing.T) {
 	var got rooms
 	if cache.Read("rooms", time.Minute, &got) {
 		t.Errorf("hit = true for a value older than the TTL, got %+v", got)
+	}
+}
+
+func TestCacheTreatsACorruptFileAsAMiss(t *testing.T) {
+	dir := t.TempDir()
+	clk := newClock()
+	cache := state.NewCache(dir, clk.Now)
+	if err := cache.Write("rooms", rooms{Names: []string{"Kitchen", "Office"}}); err != nil {
+		t.Fatal(err)
+	}
+	truncate(t, dir)
+
+	var got rooms
+	if cache.Read("rooms", time.Minute, &got) {
+		t.Errorf("hit = true for a truncated file, got %+v", got)
+	}
+}
+
+// truncate cuts every file in dir in half, as a crash mid-write would.
+func truncate(t *testing.T, dir string) {
+	t.Helper()
+	files, err := os.ReadDir(dir)
+	if err != nil || len(files) == 0 {
+		t.Fatalf("expected the cache to have written a file: %v", err)
+	}
+	for _, f := range files {
+		path := filepath.Join(dir, f.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, data[:len(data)/2], 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
