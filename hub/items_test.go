@@ -1,6 +1,7 @@
 package hub_test
 
 import (
+	"strings"
 	"testing"
 
 	"sonos-alfred/hub"
@@ -104,6 +105,18 @@ func TestTypedVolumeIsClampedToZeroThroughHundred(t *testing.T) {
 
 			if row.Title != "Set volume "+want || row.Enter != (hub.Action{Verb: "volume-set", Payload: want}) {
 				t.Errorf("first row = %q enter=%+v, want volume %s", row.Title, row.Enter, want)
+			}
+		})
+	}
+}
+
+func TestGarbageAfterVolOffersNoSetVolumeRow(t *testing.T) {
+	for _, query := range []string{"vol abc", "vol ", "vol 3x", "vol 1.5", "vol"} {
+		t.Run(query, func(t *testing.T) {
+			for _, item := range hub.Items(hub.State{}, query) {
+				if strings.HasPrefix(item.Title, "Set volume") {
+					t.Errorf("Items(%q) offered %q", query, item.Title)
+				}
 			}
 		})
 	}
