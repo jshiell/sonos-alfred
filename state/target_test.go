@@ -64,3 +64,9 @@ func TestTargetIsTheFirstGroupWhenNothingIsStoredOrPlaying(t *testing.T) {
 		t.Errorf("coordinator = %s, want Kitchen (the first group)", got.Coordinator.Name)
 	}
 }
+
+func TestThereIsNoTargetInAnEmptyHousehold(t *testing.T) {
+	if _, ok := state.ResolveTarget(sonos.Topology{}, diningRoom.UUID, livingRoom.UUID); ok {
+		t.Error("found a target in a household with no groups")
+	}
+}
