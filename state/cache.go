@@ -36,6 +36,21 @@ func (c *Cache) Write(name string, value any) error {
 	return replaceFile(c.path(name), data)
 }
 
+// Expire makes name's value stale, so the next reader refreshes it, but keeps the value for readers that
+// can use an old one. Expiring a name that isn't cached does nothing.
+func (c *Cache) Expire(name string) error {
+	e, ok := c.load(name)
+	if !ok {
+		return nil
+	}
+	e.WrittenAt = time.Time{}
+	data, err := json.Marshal(e)
+	if err != nil {
+		return err
+	}
+	return replaceFile(c.path(name), data)
+}
+
 // replaceFile swaps path's content in one step, so a reader sees the old file or the new one, never half of either.
 func replaceFile(path string, data []byte) error {
 	temp, err := os.CreateTemp(filepath.Dir(path), ".write-*")

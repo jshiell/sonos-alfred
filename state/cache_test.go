@@ -150,3 +150,24 @@ func TestCacheReadWithAgeReturnsAStaleValueAndHowOldItIs(t *testing.T) {
 		t.Errorf("got %+v, want Kitchen", got)
 	}
 }
+
+func TestCacheExpireMakesAValueStaleButKeepsIt(t *testing.T) {
+	clk := newClock()
+	cache := state.NewCache(t.TempDir(), clk.Now)
+	if err := cache.Write("rooms", rooms{Names: []string{"Kitchen"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cache.Expire("rooms"); err != nil {
+		t.Fatal(err)
+	}
+
+	var fresh rooms
+	if cache.Read("rooms", 24*time.Hour, &fresh) {
+		t.Errorf("Read hit for an expired value, got %+v", fresh)
+	}
+	var kept rooms
+	if _, found := cache.ReadWithAge("rooms", &kept); !found || len(kept.Names) != 1 || kept.Names[0] != "Kitchen" {
+		t.Errorf("ReadWithAge found=%v %+v, want the Kitchen value still there", found, kept)
+	}
+}
