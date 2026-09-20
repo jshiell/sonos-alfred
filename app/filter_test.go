@@ -223,3 +223,15 @@ func TestFilterStopsRerunningWhenARefreshNeverFinishes(t *testing.T) {
 		t.Error("never asked for a rerun, want reruns while the refresh could still finish")
 	}
 }
+
+func TestFilterAsksForRerunsAgainAfterAPauseInWhichAlfredWasClosed(t *testing.T) {
+	w := newWorkflow(t)
+	for runFilter(t, w, "").Rerun != 0 { // spend the reruns
+		w.clock.now = w.clock.now.Add(300 * time.Millisecond)
+	}
+	w.clock.now = w.clock.now.Add(time.Minute)
+
+	if got := runFilter(t, w, ""); got.Rerun == 0 {
+		t.Error("rerun unset after a long pause, want a fresh set of reruns")
+	}
+}
