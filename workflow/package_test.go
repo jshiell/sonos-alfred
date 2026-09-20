@@ -69,7 +69,8 @@ func TestPackageHoldsAnExecutableArm64Binary(t *testing.T) {
 
 // info is the part of info.plist these tests look at.
 type info struct {
-	Objects []struct {
+	UserConfiguration []map[string]any `json:"userconfigurationconfig"`
+	Objects           []struct {
 		Type   string         `json:"type"`
 		Config map[string]any `json:"config"`
 	} `json:"objects"`
@@ -151,4 +152,16 @@ func TestNoTemplateTextIsLeftInTheWorkflow(t *testing.T) {
 			t.Errorf("info.plist still contains the template text %q", leftover)
 		}
 	}
+}
+
+func TestSpeakerAddressIsASettingInTheWorkflowConfiguration(t *testing.T) {
+	for _, setting := range readInfo(t, packageWorkflow(t)).UserConfiguration {
+		if setting["variable"] == "SONOS_HOST" {
+			if setting["type"] != "textfield" {
+				t.Errorf("SONOS_HOST setting type = %v, want textfield", setting["type"])
+			}
+			return
+		}
+	}
+	t.Error("info.plist has no SONOS_HOST setting")
 }

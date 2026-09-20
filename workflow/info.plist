@@ -168,7 +168,29 @@
 		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>
-	<array/>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string></string>
+				<key>placeholder</key>
+				<string>192.168.1.20</string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>IP address of any Sonos speaker. Leave empty to find one automatically.</string>
+			<key>label</key>
+			<string>Speaker IP</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>SONOS_HOST</string>
+		</dict>
+	</array>
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
