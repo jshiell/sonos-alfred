@@ -201,3 +201,29 @@ func TestPlaylistsFollowFavoritesWithTheSameActions(t *testing.T) {
 	assertItemAction(t, "Cmd", *row.Cmd, "add-item", playlist)
 	assertItemAction(t, "Alt", *row.Alt, "play-next-item", playlist)
 }
+
+func queueOf(titles ...string) []sonos.Item {
+	var queue []sonos.Item
+	for _, title := range titles {
+		queue = append(queue, sonos.Item{Title: title})
+	}
+	return queue
+}
+
+func TestQueueRowsFollowPlaylistsAndJumpToTheirPosition(t *testing.T) {
+	playlist := sonos.Item{Title: "Focus", URI: "file:///jffs/settings/savedqueues.rsq#1"}
+
+	items := hub.Items(hub.State{Playlists: []sonos.Item{playlist}, Queue: queueOf("Saxon", "Quartz", "Only Sunny When It Snows")}, "")
+
+	got := titles(items)
+	if len(got) < 4 || got[len(got)-4] != "Focus" || got[len(got)-3] != "Saxon" || got[len(got)-1] != "Only Sunny When It Snows" {
+		t.Errorf("titles = %v, want the playlist and then the queue in order, last", got)
+	}
+	row := findItem(t, items, "Only Sunny When It Snows")
+	if !row.Valid || row.Enter != (hub.Action{Verb: "jump", Payload: "3"}) {
+		t.Errorf("Enter = %+v (valid %v), want jump 3", row.Enter, row.Valid)
+	}
+	if row.Cmd != nil || row.Alt != nil {
+		t.Errorf("Cmd = %v, Alt = %v, want none", row.Cmd, row.Alt)
+	}
+}

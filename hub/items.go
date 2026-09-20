@@ -16,6 +16,7 @@ type State struct {
 	Volume     int
 	Favorites  []sonos.Item
 	Playlists  []sonos.Item
+	Queue      []sonos.Item
 }
 
 // Item is one row Alfred shows. Enter, Cmd and Alt are what happens on Enter, ⌘-Enter and ⌥-Enter.
@@ -36,6 +37,9 @@ func Items(state State, query string) []Item {
 			continue
 		}
 		items = append(items, playableRow(playable))
+	}
+	for i, track := range state.Queue {
+		items = append(items, queueRow(track, i+1))
 	}
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)
@@ -122,4 +126,13 @@ func ParseItemPayload(payload string) (sonos.Item, error) {
 		return sonos.Item{}, err
 	}
 	return sonos.Item{URI: values.Get("uri"), Metadata: values.Get("metadata")}, nil
+}
+
+// queueRow is the track at a 1-based position in the queue.
+func queueRow(track sonos.Item, position int) Item {
+	return Item{
+		Title: track.Title,
+		Valid: true,
+		Enter: Action{Verb: "jump", Payload: strconv.Itoa(position)},
+	}
 }
