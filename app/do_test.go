@@ -269,3 +269,15 @@ func TestDoCyclesRepeatFromTheLiveSettingAndKeepsShuffle(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoSetsASleepTimerInMinutes(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t, fakespeaker.Recorded(t, "ConfigureSleepTimer", 0)) // 00:15:00
+
+	if err := app.Do(context.Background(), w.env, "sleep:15"); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -25,6 +25,7 @@ type Backend interface {
 	ChangeGroupVolume(ctx context.Context, adjustment int) (int, error)
 	PlayMode(ctx context.Context) (PlayMode, error)
 	SetPlayMode(ctx context.Context, mode PlayMode) error
+	SetSleepTimer(ctx context.Context, d time.Duration) error
 	SleepTimerRemaining(ctx context.Context) (time.Duration, error)
 	Favorites(ctx context.Context) ([]Item, error)
 	Playlists(ctx context.Context) ([]Item, error)

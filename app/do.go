@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"sonos-alfred/hub"
 	"sonos-alfred/sonos"
@@ -85,6 +86,12 @@ func Do(ctx context.Context, env Env, encoded string) error {
 		return changePlayMode(ctx, speaker, sonos.PlayMode.ToggleShuffle)
 	case "repeat":
 		return changePlayMode(ctx, speaker, sonos.PlayMode.CycleRepeat)
+	case "sleep":
+		minutes, err := strconv.Atoi(action.Payload)
+		if err != nil {
+			return fmt.Errorf("bad sleep minutes %q", action.Payload)
+		}
+		return speaker.SetSleepTimer(ctx, time.Duration(minutes)*time.Minute)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }
