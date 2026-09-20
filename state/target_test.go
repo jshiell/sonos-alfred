@@ -31,3 +31,14 @@ func TestTargetIsTheCurrentGroupOfTheStoredPlayerEvenWhenItIsNoLongerCoordinator
 		t.Errorf("coordinator = %s, want Office (Dining Room joined its group)", got.Coordinator.Name)
 	}
 }
+
+func TestTargetFallsBackToThePlayingGroupWhenTheStoredPlayerIsGone(t *testing.T) {
+	got, ok := state.ResolveTarget(household, "RINCON_UNPLUGGED", livingRoom.UUID)
+
+	if !ok {
+		t.Fatal("no target found")
+	}
+	if got.Coordinator != livingRoom {
+		t.Errorf("coordinator = %s, want Living Room (the group that is playing)", got.Coordinator.Name)
+	}
+}
