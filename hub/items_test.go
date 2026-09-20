@@ -304,3 +304,13 @@ func TestRoomsAreListedByNameAfterTheQueueAndSetTheActiveGroupOnEnter(t *testing
 		t.Errorf("Enter = %+v (valid %v), want room RINCON_DINING", row.Enter, row.Valid)
 	}
 }
+
+func TestRoomsInTheActiveGroupAreMarked(t *testing.T) {
+	items := hub.Items(hub.State{Topology: household, Target: office.UUID}, "")
+
+	for room, want := range map[string]string{"Office": "Active", "Dining Room": "Active", "Kitchen": "", "Living Room": ""} {
+		if got := findItem(t, items, room).Subtitle; got != want {
+			t.Errorf("%s subtitle = %q, want %q", room, got, want)
+		}
+	}
+}

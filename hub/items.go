@@ -18,6 +18,8 @@ type State struct {
 	Playlists  []sonos.Item
 	Queue      []sonos.Item
 	Topology   sonos.Topology
+	// Target is the coordinator UUID of the group being controlled.
+	Target string
 	// PlayingFromQueue says NowPlaying.Track is a queue position. A stream reports Track 1 too, so Track alone can't tell.
 	PlayingFromQueue bool
 }
@@ -44,7 +46,7 @@ func Items(state State, query string) []Item {
 	for i, track := range state.Queue {
 		items = append(items, queueRow(track, i+1, state.PlayingFromQueue && state.NowPlaying.Track == i+1))
 	}
-	for _, room := range roomsByName(state.Topology) {
+	for _, room := range roomsByName(state.Topology, state.Target) {
 		items = append(items, roomRow(room))
 	}
 	if setVolume, ok := setVolumeRow(query); ok {
@@ -147,20 +149,31 @@ func queueRow(track sonos.Item, position int, current bool) Item {
 	return row
 }
 
-func roomsByName(topology sonos.Topology) []sonos.Member {
-	var rooms []sonos.Member
+type room struct {
+	sonos.Member
+	active bool
+}
+
+func roomsByName(topology sonos.Topology, target string) []room {
+	var rooms []room
 	for _, group := range topology.Groups {
-		rooms = append(rooms, group.Members...)
+		for _, member := range group.Members {
+			rooms = append(rooms, room{Member: member, active: group.Coordinator.UUID == target})
+		}
 	}
-	slices.SortStableFunc(rooms, func(a, b sonos.Member) int { return strings.Compare(a.Name, b.Name) })
+	slices.SortStableFunc(rooms, func(a, b room) int { return strings.Compare(a.Name, b.Name) })
 	return rooms
 }
 
 // roomRow makes the room's group the one to control.
-func roomRow(room sonos.Member) Item {
-	return Item{
-		Title: room.Name,
+func roomRow(r room) Item {
+	row := Item{
+		Title: r.Name,
 		Valid: true,
-		Enter: Action{Verb: "room", Payload: room.UUID},
+		Enter: Action{Verb: "room", Payload: r.UUID},
 	}
+	if r.active {
+		row.Subtitle = "Active"
+	}
+	return row
 }
