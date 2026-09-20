@@ -2,6 +2,7 @@ package hub
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 type State struct {
 	NowPlaying sonos.NowPlaying
 	Volume     int
+	Favorites  []sonos.Item
 }
 
 // Item is one row Alfred shows. Enter, Cmd and Alt are what happens on Enter, ⌘-Enter and ⌥-Enter.
@@ -27,6 +29,9 @@ type Item struct {
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
 	items := []Item{nowPlayingRow(state.NowPlaying), volumeRow(state.Volume)}
+	for _, favorite := range state.Favorites {
+		items = append(items, playableRow(favorite))
+	}
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)
 	}
@@ -84,4 +89,32 @@ func volumeRow(volume int) Item {
 		Enter:    Action{Verb: "volume-change", Payload: strconv.Itoa(volumeStep)},
 		Alt:      &down,
 	}
+}
+
+// playableRow is a favorite or playlist: Enter replaces the queue and plays, ⌘ adds to the end, ⌥ plays next.
+func playableRow(item sonos.Item) Item {
+	payload := itemPayload(item)
+	add := Action{Verb: "add-item", Payload: payload}
+	playNext := Action{Verb: "play-next-item", Payload: payload}
+	return Item{
+		Title: item.Title,
+		Valid: true,
+		Enter: Action{Verb: "play-item", Payload: payload},
+		Cmd:   &add,
+		Alt:   &playNext,
+	}
+}
+
+// itemPayload carries what `do` needs to play an item without looking anything up.
+func itemPayload(item sonos.Item) string {
+	return url.Values{"uri": {item.URI}, "metadata": {item.Metadata}}.Encode()
+}
+
+// ParseItemPayload reads back what itemPayload wrote.
+func ParseItemPayload(payload string) (sonos.Item, error) {
+	values, err := url.ParseQuery(payload)
+	if err != nil {
+		return sonos.Item{}, err
+	}
+	return sonos.Item{URI: values.Get("uri"), Metadata: values.Get("metadata")}, nil
 }

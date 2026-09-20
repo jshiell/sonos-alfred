@@ -121,3 +121,50 @@ func TestGarbageAfterVolOffersNoSetVolumeRow(t *testing.T) {
 		})
 	}
 }
+
+func findItem(t *testing.T, items []hub.Item, title string) hub.Item {
+	t.Helper()
+	for _, item := range items {
+		if item.Title == title {
+			return item
+		}
+	}
+	t.Fatalf("no item titled %q in %v", title, titles(items))
+	return hub.Item{}
+}
+
+func titles(items []hub.Item) []string {
+	var got []string
+	for _, item := range items {
+		got = append(got, item.Title)
+	}
+	return got
+}
+
+func assertItemAction(t *testing.T, name string, got hub.Action, wantVerb string, want sonos.Item) {
+	t.Helper()
+	if got.Verb != wantVerb {
+		t.Errorf("%s verb = %q, want %q", name, got.Verb, wantVerb)
+		return
+	}
+	item, err := hub.ParseItemPayload(got.Payload)
+	if err != nil || item.URI != want.URI || item.Metadata != want.Metadata {
+		t.Errorf("%s payload = %+v, %v; want URI %q and metadata %q", name, item, err, want.URI, want.Metadata)
+	}
+}
+
+func TestFavoriteReplacesOnEnterAddsOnCmdAndPlaysNextOnAlt(t *testing.T) {
+	album := sonos.Item{ID: "FV:2/50", Title: "Niero:Atlas", URI: "x-rincon-cpcontainer:1004206c?sid=204&flags=8300", Metadata: `<DIDL-Lite><item id="1004206c"><dc:title>Niero & Co</dc:title></item></DIDL-Lite>`}
+
+	row := findItem(t, hub.Items(hub.State{Favorites: []sonos.Item{album}}, ""), "Niero:Atlas")
+
+	if !row.Valid {
+		t.Error("favorite is not valid")
+	}
+	assertItemAction(t, "Enter", row.Enter, "play-item", album)
+	if row.Cmd == nil || row.Alt == nil {
+		t.Fatalf("Cmd = %v, Alt = %v, want both", row.Cmd, row.Alt)
+	}
+	assertItemAction(t, "Cmd", *row.Cmd, "add-item", album)
+	assertItemAction(t, "Alt", *row.Alt, "play-next-item", album)
+}
