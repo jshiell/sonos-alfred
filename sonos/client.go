@@ -19,6 +19,7 @@ type Service struct {
 // The services this client talks to.
 var (
 	AVTransport           = Service{"/MediaRenderer/AVTransport/Control", "urn:schemas-upnp-org:service:AVTransport:1"}
+	ContentDirectory      = Service{"/MediaServer/ContentDirectory/Control", "urn:schemas-upnp-org:service:ContentDirectory:1"}
 	GroupRenderingControl = Service{"/MediaRenderer/GroupRenderingControl/Control", "urn:schemas-upnp-org:service:GroupRenderingControl:1"}
 	ZoneGroupTopology     = Service{"/ZoneGroupTopology/Control", "urn:schemas-upnp-org:service:ZoneGroupTopology:1"}
 )
