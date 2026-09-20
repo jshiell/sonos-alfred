@@ -35,6 +35,7 @@ func Do(ctx context.Context, env Env, encoded string) error {
 		if transport == sonos.StatePlaying {
 			return speaker.Pause(ctx)
 		}
+		return speaker.Play(ctx)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }

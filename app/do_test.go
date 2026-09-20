@@ -58,3 +58,18 @@ func TestDoPausesWhatIsPlayingOnTheTargetsCoordinator(t *testing.T) {
 		t.Errorf("connected to %v, want only the Dining Room coordinator %v", *hosts, want)
 	}
 }
+
+func TestDoPlaysWhatIsStopped(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t,
+		fakespeaker.Recorded(t, "GetTransportInfo", 3), // STOPPED
+		fakespeaker.Recorded(t, "Play", 0),
+	)
+
+	if err := app.Do(context.Background(), w.env, "playpause:"); err != nil {
+		t.Fatal(err)
+	}
+}
