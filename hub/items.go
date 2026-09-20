@@ -52,7 +52,7 @@ func Items(state State, query string) []Item {
 func matching(items []Item, query string) []Item {
 	var kept []Item
 	for _, item := range items {
-		if strings.Contains(strings.ToLower(item.Title), strings.ToLower(query)) {
+		if hasLettersInOrder(item.Title, query) {
 			kept = append(kept, item)
 		}
 	}
@@ -234,4 +234,17 @@ func cancelSleepRow(remaining time.Duration) Item {
 		Valid:    true,
 		Enter:    Action{Verb: "sleep-cancel"},
 	}
+}
+
+// hasLettersInOrder is true when every letter of query appears in text, in order, ignoring case.
+func hasLettersInOrder(text, query string) bool {
+	remaining := []rune(strings.ToLower(text))
+	for _, letter := range strings.ToLower(query) {
+		at := slices.Index(remaining, letter)
+		if at < 0 {
+			return false
+		}
+		remaining = remaining[at+1:]
+	}
+	return true
 }

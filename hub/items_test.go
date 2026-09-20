@@ -392,3 +392,21 @@ func TestQueryKeepsOnlyRowsWhoseTitleMatches(t *testing.T) {
 		t.Errorf("titles = %v, want %v", got, want)
 	}
 }
+
+func TestQueryMatchesLettersInOrderNotNecessarilyAdjacent(t *testing.T) {
+	for query, want := range map[string][]string{
+		"nra":  {"Niero:Atlas"},
+		"NRA":  {"Niero:Atlas"},
+		"sx":   {"Saxon"},
+		"xs":   nil, // Same letters as sx in the wrong order: no title has an s after its x
+		"shuf": {"Shuffle: off"},
+	} {
+		t.Run(query, func(t *testing.T) {
+			got := titles(hub.Items(fullHousehold(), query))
+
+			if !slices.Equal(got, want) {
+				t.Errorf("titles = %v, want %v", got, want)
+			}
+		})
+	}
+}
