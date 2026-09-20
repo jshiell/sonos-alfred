@@ -27,3 +27,29 @@ func TestSetGroupVolumeSendsTheDesiredVolume(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestChangeGroupVolumeReturnsTheNewVolume(t *testing.T) {
+	cases := []struct {
+		name       string
+		recordedN  int
+		adjustment int
+		wantVolume int
+	}{
+		{"up by two", 0, 2, 14},
+		{"down by two", 1, -2, 12},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			speaker := speakerReplaying(t, groupRenderingControlPath, groupRenderingControlURN, recorded(t, "SetRelativeGroupVolume", tc.recordedN))
+
+			got, err := sonos.NewClient(speaker.URL).ChangeGroupVolume(context.Background(), tc.adjustment)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tc.wantVolume {
+				t.Errorf("new volume = %d, want %d", got, tc.wantVolume)
+			}
+		})
+	}
+}
