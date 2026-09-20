@@ -41,3 +41,17 @@ func TestRenderPutsEnterInArgAndCmdAndAltInMods(t *testing.T) {
 		"mods": {"cmd": {"arg": "next:", "valid": true}, "alt": {"arg": "previous:", "valid": true}}
 	}]}`)
 }
+
+func TestRenderDisablesModifiersTheRowHasNoActionFor(t *testing.T) {
+	items := []hub.Item{{Title: "Kitchen", Valid: true, Enter: hub.Action{Verb: "room", Payload: "RINCON_KITCHEN"}}}
+
+	got, err := alfredjson.Render(items, false)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertJSON(t, got, `{"items":[{
+		"title": "Kitchen", "valid": true, "arg": "room:RINCON_KITCHEN",
+		"mods": {"cmd": {"valid": false}, "alt": {"valid": false}}
+	}]}`)
+}
