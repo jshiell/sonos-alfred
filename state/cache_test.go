@@ -87,3 +87,44 @@ func truncate(t *testing.T, dir string) {
 		}
 	}
 }
+
+func TestCacheKeepsThePreviousValueWhenAWriteFails(t *testing.T) {
+	dir := t.TempDir()
+	clk := newClock()
+	cache := state.NewCache(dir, clk.Now)
+	if err := cache.Write("rooms", rooms{Names: []string{"Kitchen"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(dir, 0o500); err != nil { // no new files can be created
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(dir, 0o700) })
+
+	if err := cache.Write("rooms", rooms{Names: []string{"Office"}}); err == nil {
+		t.Fatal("Write succeeded in a directory it cannot create files in, want an error")
+	}
+
+	var got rooms
+	if !cache.Read("rooms", time.Minute, &got) || len(got.Names) != 1 || got.Names[0] != "Kitchen" {
+		t.Errorf("after the failed write got %+v, want the previous Kitchen value", got)
+	}
+}
+
+func TestCacheLeavesNoTemporaryFilesBehind(t *testing.T) {
+	dir := t.TempDir()
+	cache := state.NewCache(dir, newClock().Now)
+
+	for _, name := range []string{"rooms", "rooms", "queue"} {
+		if err := cache.Write(name, rooms{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 2 {
+		t.Errorf("directory holds %d files after writing 2 names, want 2: %v", len(files), files)
+	}
+}

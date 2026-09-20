@@ -3,6 +3,7 @@ package state
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -32,7 +33,26 @@ func (c *Cache) Write(name string, value any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(c.path(name), data, 0o644)
+	return replaceFile(c.path(name), data)
+}
+
+// replaceFile swaps path's content in one step, so a reader sees the old file or the new one, never half of either.
+func replaceFile(path string, data []byte) error {
+	temp, err := os.CreateTemp(filepath.Dir(path), ".write-*")
+	if err != nil {
+		return err
+	}
+	_, writeErr := temp.Write(data)
+	closeErr := temp.Close()
+	if err := errors.Join(writeErr, closeErr); err != nil {
+		os.Remove(temp.Name())
+		return err
+	}
+	if err := os.Rename(temp.Name(), path); err != nil {
+		os.Remove(temp.Name())
+		return err
+	}
+	return nil
 }
 
 // Read fills into and reports true when name holds a value.
