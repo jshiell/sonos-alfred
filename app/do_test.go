@@ -191,3 +191,19 @@ func TestDoPlaysAFavoriteNextAfterTheCurrentTrack(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoJumpsToAQueueTrackOnTheTargetsQueue(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t,
+		fakespeaker.Recorded(t, "SetAVTransportURI", 2), // x-rincon-queue:<Dining Room>#0
+		fakespeaker.Recorded(t, "Seek", 1),              // TRACK_NR 3
+		fakespeaker.Recorded(t, "Play", 2),
+	)
+
+	if err := app.Do(context.Background(), w.env, "jump:3"); err != nil {
+		t.Fatal(err)
+	}
+}

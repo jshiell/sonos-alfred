@@ -15,6 +15,7 @@ type Backend interface {
 	Pause(ctx context.Context) error
 	EnqueueAtEnd(ctx context.Context, item Item) error
 	EnqueueNext(ctx context.Context, item Item) error
+	JumpToQueueTrack(ctx context.Context, coordinatorUUID string, track int) error
 	ReplaceAndPlay(ctx context.Context, coordinatorUUID string, item Item) error
 	Next(ctx context.Context) error
 	Previous(ctx context.Context) error

@@ -72,6 +72,12 @@ func Do(ctx context.Context, env Env, encoded string) error {
 			return err
 		}
 		return speaker.EnqueueNext(ctx, item)
+	case "jump":
+		track, err := strconv.Atoi(action.Payload)
+		if err != nil {
+			return fmt.Errorf("bad queue position %q", action.Payload)
+		}
+		return speaker.JumpToQueueTrack(ctx, group.Coordinator.UUID, track)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }
