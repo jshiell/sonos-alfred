@@ -99,6 +99,20 @@ Top level: **now-playing row**, volume row, then Favorites, Playlists, Queue, Ro
 5. How Alfred surfaces a Run Script failure. The Alfred docs are silent on exit status/stderr.
 6. Whether Go's arm64 output is already ad-hoc signed and runs cleanly from an imported workflow.
 
+## Spike findings
+
+### S1 — discovery + topology (2026-09-20)
+- **Unverified #1 resolved: local UPnP works.** `GetZoneGroupState` on port 1400 returned HTTP 200 from all 9 responding IPs (firmware 97.1-80312). No need to change backend.
+- **Sandbox:** SSDP multicast finds nothing from inside the nono sandbox (run outside it: 9 speakers). Unicast HTTP to a known IP works (25 ms). So SSDP can only be hand-verified outside the sandbox; everything else can be tested here against a known IP.
+- **6 rooms, 9 IPs.** Rooms: Kitchen, Living Room, Garden Room, Office, Dining Room, Play. The 3 extra SSDP responders are the Living Room's rear surrounds and sub. **Discovery results must be deduplicated through the topology, never used as a room list.**
+- **Unverified #4 partly resolved.** Soundbar+sub+surrounds is the nested shape: `<Satellite Invisible="1">` children inside the soundbar's `ZoneGroupMember` (rears carry the room's `ZoneName`, the sub is named `Sub`). The soundbar member also has `HTSatChanMapSet`. **No stereo pair exists in this household**, so the top-level `Invisible="1"` shape is not captured; the 2.2b fixture will be synthetic, built from SoCo/svrooij docs and labelled as such.
+- **Group order differs per responding speaker** (same groups, shuffled). Sort rooms by name for a stable UI.
+- **Group `ID` prefix is not the coordinator**: Garden Room's coordinator is `RINCON_3333…` but its group ID starts `RINCON_1111…`. Always use the `Coordinator` attribute, never parse the ID.
+- All 6 groups are currently single-member. Multi-member groups are untested against real hardware.
+- Responses from different speakers differ only in non-structural attributes (e.g. `LineInActiveMask`).
+- Fixture: `testdata/zonegroupstate-home-theatre.xml` (real, from the soundbar). It contains MAC-derived UUIDs and private IPs.
+- SSDP timing not yet recorded (S1 output not seen by me).
+
 ## Out of scope for v1
 SMAPI search (needs its own spike incl. Apple Music auth), grouping/scenes, line-in/TV, TTS/announcements, Universal Actions, cloud Control API, EQ/alarms, amd64, updates/notarization.
 
