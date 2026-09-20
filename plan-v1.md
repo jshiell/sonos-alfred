@@ -136,7 +136,9 @@ Run on Dining Room (`192.0.2.29`) with your consent; volume stayed 12–14 and w
 - **Group volume (single-member group):** `SetRelativeGroupVolume(+2)` → `NewVolume 14`; `(-2)` → `12`; `SetGroupVolume 12` OK; group and member volume agree.
 - **Playlists:** `SQ:` is empty here. The Playlists section will be empty for this household.
 - Fixtures: `testdata/browse-favorites-albums-and-shortcuts.xml` (replaces the earlier favorites fixture) and `testdata/s2-dining-room-exchanges.jsonl` (the exact requests the speaker accepted, plus the 701 fault; the spike escapes values with Go's `html.EscapeString`, so `'` becomes `&#39;`).
-- **Still open:** the `SnapshotGroupVolume` question (unverified #3) needs two rooms grouped and members at different volumes (needs you), and SSDP timing.
+- **Group volume with two members (Dining Room coordinator, Office member; 12/1, group reads 6) — unverified #3 resolved: a snapshot is NOT required.** `SetGroupVolume` and `SetRelativeGroupVolume` work without one: the group value lands on the target and `NewVolume` matches the readback. So **2.6c is dropped**. Caveats: (1) per-member changes are **not a simple ratio** (12/1 → `SetGroupVolume 8` gave 13/3 without a snapshot and 12/4 with one; `-5` gave 6/2, with Office *rising*, which I suspect but have not confirmed is a stale internal snapshot from the previous call); (2) `GetGroupVolume` is not a pure function of member volumes (members restored to 12/1 read group 7, 8, 9, 7 across runs), so a group volume read right after a member change can be stale. Fine for single-room use; treat multi-room group volume as best-effort.
+- **Non-coordinator commands fail:** `GetGroupVolume` sent to Office (a member) returned errorCode **701**. This confirms the "always target the current coordinator" rule.
+- **Still open:** SSDP timing (S1 output not seen).
 
 ## Out of scope for v1
 SMAPI search (needs its own spike incl. Apple Music auth), grouping/scenes, line-in/TV, TTS/announcements, Universal Actions, cloud Control API, EQ/alarms, amd64, updates/notarization.
