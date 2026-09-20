@@ -411,6 +411,16 @@ func TestQueryMatchesLettersInOrderNotNecessarilyAdjacent(t *testing.T) {
 	}
 }
 
+func TestRowsWhoseTitleContainsTheQueryComeBeforeScatteredMatches(t *testing.T) {
+	state := hub.State{Queue: queueOf("Kinetic"), Topology: household}
+
+	got := titles(hub.Items(state, "kit"))
+
+	if want := []string{"Kitchen", "Kinetic"}; !slices.Equal(got, want) {
+		t.Errorf("titles = %v, want %v", got, want)
+	}
+}
+
 func TestColdCacheShowsOnlyALoadingRowWhateverIsTyped(t *testing.T) {
 	for _, query := range []string{"", "nier", "vol 35"} {
 		t.Run(query, func(t *testing.T) {

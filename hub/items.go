@@ -58,15 +58,19 @@ func Items(state State, query string) []Item {
 	return items
 }
 
-// matching keeps the rows a query asks for; an empty query asks for all of them.
+// matching keeps the rows a query asks for; an empty query asks for all of them. Rows whose title contains
+// the query come before rows that only have its letters scattered through the title.
 func matching(items []Item, query string) []Item {
-	var kept []Item
+	var contained, scattered []Item
 	for _, item := range items {
-		if hasLettersInOrder(item.Title, query) {
-			kept = append(kept, item)
+		switch {
+		case strings.Contains(strings.ToLower(item.Title), strings.ToLower(query)):
+			contained = append(contained, item)
+		case hasLettersInOrder(item.Title, query):
+			scattered = append(scattered, item)
 		}
 	}
-	return kept
+	return append(contained, scattered...)
 }
 
 func allRows(state State) []Item {
