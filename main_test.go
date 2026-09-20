@@ -15,6 +15,15 @@ import (
 	"sonos-alfred/state"
 )
 
+// runCommand runs the command line against an empty workflow data directory, as Alfred would.
+func runCommand(t *testing.T, args ...string) (exitCode int, stdout string) {
+	t.Helper()
+	t.Setenv("alfred_workflow_data", t.TempDir())
+	var out bytes.Buffer
+	exitCode = run(args, &out)
+	return exitCode, out.String()
+}
+
 // withFreshState fills the data directory with a state that needs no refresh, so filter never starts one.
 func withFreshState(t *testing.T, current hub.State) {
 	t.Helper()
@@ -54,5 +63,16 @@ func TestFilterThatFailsStillPrintsAnErrorRowAndExitsZero(t *testing.T) {
 	}
 	if !json.Valid(out.Bytes()) || !strings.Contains(out.String(), "Sonos hit a problem") {
 		t.Errorf("stdout = %s, want Script Filter JSON with the problem row", out.String())
+	}
+}
+
+func TestDoThatFailsPrintsWhyForTheNotificationAndExitsNonZero(t *testing.T) {
+	exitCode, stdout := runCommand(t, "do", hub.Encode(hub.Action{Verb: "playpause"})) // nothing is cached yet, so there is no speaker to tell
+
+	if exitCode == 0 {
+		t.Error("exit code = 0, want non-zero")
+	}
+	if strings.TrimSpace(stdout) == "" {
+		t.Error("stdout is empty, want the reason: the notification shows what do prints")
 	}
 }
