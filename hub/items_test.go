@@ -84,3 +84,15 @@ func TestVolumeRowStepsTheVolumeUpOnEnterAndDownOnAlt(t *testing.T) {
 		t.Errorf("Cmd = %+v, want none", row.Cmd)
 	}
 }
+
+func TestTypingVolAndANumberOffersToSetThatVolume(t *testing.T) {
+	items := hub.Items(hub.State{Volume: 12}, "vol 35")
+
+	if len(items) == 0 {
+		t.Fatal("no items")
+	}
+	row := items[0]
+	if row.Title != "Set volume 35" || !row.Valid || row.Enter != (hub.Action{Verb: "volume-set", Payload: "35"}) {
+		t.Errorf("first row = %q valid=%v enter=%+v, want 'Set volume 35' doing volume-set 35", row.Title, row.Valid, row.Enter)
+	}
+}

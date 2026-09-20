@@ -26,7 +26,24 @@ type Item struct {
 
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
-	return []Item{nowPlayingRow(state.NowPlaying), volumeRow(state.Volume)}
+	items := []Item{nowPlayingRow(state.NowPlaying), volumeRow(state.Volume)}
+	if setVolume, ok := setVolumeRow(query); ok {
+		items = append([]Item{setVolume}, items...)
+	}
+	return items
+}
+
+// setVolumeRow answers a query like "vol 35".
+func setVolumeRow(query string) (Item, bool) {
+	number, found := strings.CutPrefix(query, "vol ")
+	if !found {
+		return Item{}, false
+	}
+	return Item{
+		Title: "Set volume " + number,
+		Valid: true,
+		Enter: Action{Verb: "volume-set", Payload: number},
+	}, true
 }
 
 func nowPlayingRow(track sonos.NowPlaying) Item {
