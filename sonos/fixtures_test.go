@@ -90,6 +90,9 @@ func fixtureFile(t *testing.T, name string) string {
 const (
 	avTransportPath = "/MediaRenderer/AVTransport/Control"
 	avTransportURN  = "urn:schemas-upnp-org:service:AVTransport:1"
+
+	groupRenderingControlPath = "/MediaRenderer/GroupRenderingControl/Control"
+	groupRenderingControlURN  = "urn:schemas-upnp-org:service:GroupRenderingControl:1"
 )
 
 // speakerReplaying returns a strict fake that expects the recorded exchanges, in order, on one service.
