@@ -98,3 +98,36 @@ func TestRefreshRecordsUnreachableWhenNoSpeakerIsFound(t *testing.T) {
 		t.Errorf("state = %+v, want Unreachable", got)
 	}
 }
+
+func TestRefreshDoesNothingWhileAnotherRefreshIsRunning(t *testing.T) {
+	w := newWorkflow(t)
+	if _, acquired := state.NewRefreshLock(w.env.Dir, w.clock.Now, time.Hour).TryAcquire(); !acquired {
+		t.Fatal("could not take the refresh lock")
+	}
+	w.env.Discover = func(context.Context) (string, error) {
+		t.Error("Discover called while another refresh held the lock")
+		return "", errors.New("unreachable")
+	}
+
+	if err := app.Refresh(context.Background(), w.env); err != nil {
+		t.Fatal(err)
+	}
+
+	var got hub.State
+	if w.cache.Read(app.StateEntry, time.Minute, &got) {
+		t.Errorf("refresh wrote %+v while another was running, want nothing", got)
+	}
+}
+
+func TestRefreshGivesTheLockBackWhenItIsDone(t *testing.T) {
+	w := newWorkflow(t)
+	w.env.Discover = func(context.Context) (string, error) { return "", errors.New("no speakers answered") }
+
+	if err := app.Refresh(context.Background(), w.env); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, acquired := state.NewRefreshLock(w.env.Dir, w.clock.Now, time.Hour).TryAcquire(); !acquired {
+		t.Error("the refresh lock is still held after Refresh returned")
+	}
+}
