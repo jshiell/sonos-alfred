@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"sonos-alfred/internal/fakespeaker"
 	"sonos-alfred/sonos"
 )
 
@@ -84,4 +85,24 @@ func fixtureFile(t *testing.T, name string) string {
 		t.Fatal(err)
 	}
 	return string(content)
+}
+
+const (
+	avTransportPath = "/MediaRenderer/AVTransport/Control"
+	avTransportURN  = "urn:schemas-upnp-org:service:AVTransport:1"
+)
+
+// speakerReplaying returns a strict fake that expects the recorded exchanges, in order, on one service.
+func speakerReplaying(t *testing.T, path, urn string, exchanges ...recordedExchange) *fakespeaker.Speaker {
+	t.Helper()
+	var script []fakespeaker.Exchange
+	for _, exchange := range exchanges {
+		script = append(script, fakespeaker.Exchange{
+			Path:       path,
+			SOAPAction: `"` + urn + "#" + exchange.Action + `"`,
+			Body:       exchange.Request,
+			Respond:    fakespeaker.Response{Status: exchange.Status, Body: exchange.Response},
+		})
+	}
+	return fakespeaker.New(t, script...)
 }
