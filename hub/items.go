@@ -2,10 +2,12 @@ package hub
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"sonos-alfred/sonos"
 )
@@ -19,6 +21,8 @@ type State struct {
 	Queue      []sonos.Item
 	Topology   sonos.Topology
 	PlayMode   sonos.PlayMode
+	// SleepRemaining is how long the sleep timer has left, or 0 when none is running.
+	SleepRemaining time.Duration
 	// Target is the coordinator UUID of the group being controlled.
 	Target string
 	// PlayingFromQueue says NowPlaying.Track is a queue position. A stream reports Track 1 too, so Track alone can't tell.
@@ -51,6 +55,9 @@ func Items(state State, query string) []Item {
 		items = append(items, roomRow(room))
 	}
 	items = append(items, shuffleRow(state.PlayMode), repeatRow(state.PlayMode))
+	if state.SleepRemaining > 0 {
+		items = append(items, cancelSleepRow(state.SleepRemaining))
+	}
 	for _, minutes := range []int{15, 30, 60} {
 		items = append(items, sleepRow(minutes))
 	}
@@ -201,5 +208,14 @@ func sleepRow(minutes int) Item {
 		Title: fmt.Sprintf("Sleep in %d minutes", minutes),
 		Valid: true,
 		Enter: Action{Verb: "sleep", Payload: strconv.Itoa(minutes)},
+	}
+}
+
+func cancelSleepRow(remaining time.Duration) Item {
+	return Item{
+		Title:    "Cancel sleep timer",
+		Subtitle: fmt.Sprintf("%d min left", int(math.Ceil(remaining.Minutes()))),
+		Valid:    true,
+		Enter:    Action{Verb: "sleep-cancel"},
 	}
 }

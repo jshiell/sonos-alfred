@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"sonos-alfred/hub"
 	"sonos-alfred/sonos"
@@ -353,6 +354,24 @@ func TestSleepPresetsFollowRepeatAndSetTheTimerOnEnter(t *testing.T) {
 		row := findItem(t, items, title)
 		if !row.Valid || row.Enter != (hub.Action{Verb: "sleep", Payload: minutes}) {
 			t.Errorf("%s: Enter = %+v (valid %v), want sleep %s", title, row.Enter, row.Valid, minutes)
+		}
+	}
+}
+
+func TestRunningSleepTimerOffersCancelWithTheTimeLeft(t *testing.T) {
+	items := hub.Items(hub.State{SleepRemaining: 22*time.Minute + 41*time.Second}, "")
+
+	assertRowsInOrder(t, items, "Repeat: off", "Cancel sleep timer", "Sleep in 15 minutes")
+	row := findItem(t, items, "Cancel sleep timer")
+	if row.Subtitle != "23 min left" || !row.Valid || row.Enter != (hub.Action{Verb: "sleep-cancel"}) {
+		t.Errorf("row = subtitle %q valid %v enter %+v, want '23 min left' doing sleep-cancel", row.Subtitle, row.Valid, row.Enter)
+	}
+}
+
+func TestNoCancelRowWithoutASleepTimer(t *testing.T) {
+	for _, title := range titles(hub.Items(hub.State{}, "")) {
+		if title == "Cancel sleep timer" {
+			t.Error("cancel row shown with no timer running")
 		}
 	}
 }
