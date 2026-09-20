@@ -19,3 +19,11 @@ func TestGroupVolumeReadsTheGroupsVolume(t *testing.T) {
 		t.Errorf("volume = %d, want 12", volume)
 	}
 }
+
+func TestSetGroupVolumeSendsTheDesiredVolume(t *testing.T) {
+	speaker := speakerReplaying(t, groupRenderingControlPath, groupRenderingControlURN, recorded(t, "SetGroupVolume", 0))
+
+	if err := sonos.NewClient(speaker.URL).SetGroupVolume(context.Background(), 12); err != nil {
+		t.Fatal(err)
+	}
+}

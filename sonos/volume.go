@@ -13,3 +13,10 @@ func (c *Client) GroupVolume(ctx context.Context) (int, error) {
 	}
 	return strconv.Atoi(values["CurrentVolume"])
 }
+
+// SetGroupVolume sets the group's volume (0-100).
+func (c *Client) SetGroupVolume(ctx context.Context, volume int) error {
+	_, err := c.Call(ctx, GroupRenderingControl, "SetGroupVolume",
+		Arg{"InstanceID", "0"}, Arg{"DesiredVolume", strconv.Itoa(volume)})
+	return err
+}
