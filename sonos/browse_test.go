@@ -2,16 +2,22 @@ package sonos_test
 
 import (
 	"context"
+	"html"
 	"net/http"
+	"strconv"
+	"strings"
 	"testing"
 
 	"sonos-alfred/internal/fakespeaker"
 	"sonos-alfred/sonos"
 )
 
-func browseRequest(objectID string) string {
+func browseRequest(objectID string) string { return browseRequestFrom(objectID, 0) }
+
+func browseRequestFrom(objectID string, startingIndex int) string {
 	return `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:Browse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><ObjectID>` +
-		objectID + `</ObjectID><BrowseFlag>BrowseDirectChildren</BrowseFlag><Filter>*</Filter><StartingIndex>0</StartingIndex><RequestedCount>100</RequestedCount><SortCriteria></SortCriteria></u:Browse></s:Body></s:Envelope>`
+		objectID + `</ObjectID><BrowseFlag>BrowseDirectChildren</BrowseFlag><Filter>*</Filter><StartingIndex>` + strconv.Itoa(startingIndex) +
+		`</StartingIndex><RequestedCount>100</RequestedCount><SortCriteria></SortCriteria></u:Browse></s:Body></s:Envelope>`
 }
 
 func contentDirectorySpeaker(t *testing.T, objectID, responseFixture string) *fakespeaker.Speaker {
@@ -86,5 +92,42 @@ func TestQueueListsTracksInOrder(t *testing.T) {
 	}
 	if want := "x-sonos-http:song%3a9000000002.mp4?sid=204&flags=8232&sn=5"; first.URI != want {
 		t.Errorf("first track URI = %q, want %q", first.URI, want)
+	}
+}
+
+// queuePage builds a Browse response page of tracks "Track from+1" .. "Track to" out of total, in the real response shape.
+func queuePage(from, to, total int) string {
+	var didl strings.Builder
+	didl.WriteString(`<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">`)
+	for n := from + 1; n <= to; n++ {
+		didl.WriteString(`<item id="Q:0/` + strconv.Itoa(n) + `" parentID="Q:0" restricted="true"><res protocolInfo="x-sonos-http:*:*:*">x-sonos-http:song` + strconv.Itoa(n) + `.mp4</res><dc:title>Track ` + strconv.Itoa(n) + `</dc:title></item>`)
+	}
+	didl.WriteString(`</DIDL-Lite>`)
+	return `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:BrowseResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><Result>` +
+		html.EscapeString(didl.String()) + `</Result><NumberReturned>` + strconv.Itoa(to-from) + `</NumberReturned><TotalMatches>` + strconv.Itoa(total) +
+		`</TotalMatches><UpdateID>1</UpdateID></u:BrowseResponse></s:Body></s:Envelope>`
+}
+
+func TestQueueFollowsPagingBeyondTheFirstHundredTracks(t *testing.T) {
+	// The real Dining Room queue was 151 tracks; a single Browse returns at most 100.
+	const soapAction = `"urn:schemas-upnp-org:service:ContentDirectory:1#Browse"`
+	const path = "/MediaServer/ContentDirectory/Control"
+	speaker := fakespeaker.New(t,
+		fakespeaker.Exchange{Path: path, SOAPAction: soapAction, Body: browseRequestFrom("Q:0", 0),
+			Respond: fakespeaker.Response{Status: http.StatusOK, Body: queuePage(0, 100, 151)}},
+		fakespeaker.Exchange{Path: path, SOAPAction: soapAction, Body: browseRequestFrom("Q:0", 100),
+			Respond: fakespeaker.Response{Status: http.StatusOK, Body: queuePage(100, 151, 151)}},
+	)
+
+	queue, err := sonos.NewClient(speaker.URL).Queue(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queue) != 151 {
+		t.Fatalf("got %d tracks, want 151", len(queue))
+	}
+	if queue[0].Title != "Track 1" || queue[100].Title != "Track 101" || queue[150].Title != "Track 151" {
+		t.Errorf("tracks out of order: first %q, 101st %q, last %q", queue[0].Title, queue[100].Title, queue[150].Title)
 	}
 }

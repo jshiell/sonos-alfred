@@ -3,6 +3,7 @@ package sonos
 import (
 	"context"
 	"encoding/xml"
+	"strconv"
 )
 
 // Item is an entry from the speaker's content directory: a favorite, a playlist or a queue track.
@@ -18,18 +19,32 @@ func (c *Client) Favorites(ctx context.Context) ([]Item, error) {
 	return c.browse(ctx, "FV:2")
 }
 
+const browsePageSize = 100
+
+// browse returns every child of objectID, following the speaker's paging.
 func (c *Client) browse(ctx context.Context, objectID string) ([]Item, error) {
-	values, err := c.Call(ctx, ContentDirectory, "Browse",
-		Arg{"ObjectID", objectID},
-		Arg{"BrowseFlag", "BrowseDirectChildren"},
-		Arg{"Filter", "*"},
-		Arg{"StartingIndex", "0"},
-		Arg{"RequestedCount", "100"},
-		Arg{"SortCriteria", ""})
-	if err != nil {
-		return nil, err
+	var all []Item
+	for {
+		values, err := c.Call(ctx, ContentDirectory, "Browse",
+			Arg{"ObjectID", objectID},
+			Arg{"BrowseFlag", "BrowseDirectChildren"},
+			Arg{"Filter", "*"},
+			Arg{"StartingIndex", strconv.Itoa(len(all))},
+			Arg{"RequestedCount", strconv.Itoa(browsePageSize)},
+			Arg{"SortCriteria", ""})
+		if err != nil {
+			return nil, err
+		}
+		page, err := parseDIDL(values["Result"])
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, page...)
+		total, _ := strconv.Atoi(values["TotalMatches"])
+		if len(page) == 0 || len(all) >= total {
+			return all, nil
+		}
 	}
-	return parseDIDL(values["Result"])
 }
 
 func parseDIDL(didl string) ([]Item, error) {
