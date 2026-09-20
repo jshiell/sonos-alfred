@@ -2,9 +2,18 @@ package sonos
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
+
+// ErrNotEnqueueable is returned when the speaker refuses to add an item to the queue.
+var ErrNotEnqueueable = errors.New("speaker refused to add the item to the queue")
+
+// enqueueRefusedCode is the UPnP error seen when an item cannot be enqueued. Only one observation backs
+// this (S2, a Sonos Radio URI), so treat it as "the speaker said no" rather than a precise diagnosis.
+const enqueueRefusedCode = 800
 
 // streamSchemes are URI schemes played directly rather than through the queue.
 // Only x-rincon-mp3radio was verified against a real speaker; the others are unverified.
@@ -62,6 +71,10 @@ func (c *Client) addToQueue(ctx context.Context, item Item, position int, asNext
 		Arg{"EnqueuedURIMetaData", item.Metadata},
 		Arg{"DesiredFirstTrackNumberEnqueued", strconv.Itoa(position)},
 		Arg{"EnqueueAsNext", enqueueAsNext})
+	var fault *Fault
+	if errors.As(err, &fault) && fault.Code == enqueueRefusedCode {
+		return fmt.Errorf("%w: %w", ErrNotEnqueueable, err)
+	}
 	return err
 }
 

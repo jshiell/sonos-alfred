@@ -2,6 +2,7 @@ package sonos_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"sonos-alfred/sonos"
@@ -69,5 +70,18 @@ func TestEnqueueNextAppendsWhenTheGroupIsPlayingAStream(t *testing.T) {
 
 	if err := sonos.NewClient(speaker.URL).EnqueueNext(context.Background(), nier); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestEnqueueReportsItemsTheSpeakerRefusesAsNotEnqueueable(t *testing.T) {
+	refused := recorded(t, "AddURIToQueue", 5) // UPnP error 800
+	args := argsOf(t, refused.Request)
+	item := sonos.Item{URI: args[1].Value, Metadata: args[2].Value}
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, refused)
+
+	err := sonos.NewClient(speaker.URL).EnqueueAtEnd(context.Background(), item)
+
+	if !errors.Is(err, sonos.ErrNotEnqueueable) {
+		t.Errorf("error = %v, want sonos.ErrNotEnqueueable", err)
 	}
 }
