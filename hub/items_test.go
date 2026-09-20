@@ -40,3 +40,22 @@ func TestNowPlayingRowSaysSoWhenNothingIsLoaded(t *testing.T) {
 		t.Errorf("row = %q / %q, want 'Nothing playing' with no subtitle", row.Title, row.Subtitle)
 	}
 }
+
+func TestNowPlayingSubtitleSkipsMissingArtistOrAlbum(t *testing.T) {
+	for name, tc := range map[string]struct {
+		track sonos.NowPlaying
+		want  string
+	}{
+		"stream, title only": {sonos.NowPlaying{Title: "Groove Salad"}, ""},
+		"no album":           {sonos.NowPlaying{Title: "Song", Artist: "Band"}, "Band"},
+		"no artist":          {sonos.NowPlaying{Title: "Song", Album: "Record"}, "Record"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			row := hub.Items(hub.State{NowPlaying: tc.track}, "")[0]
+
+			if row.Subtitle != tc.want {
+				t.Errorf("Subtitle = %q, want %q", row.Subtitle, tc.want)
+			}
+		})
+	}
+}

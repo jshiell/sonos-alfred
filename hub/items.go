@@ -1,6 +1,10 @@
 package hub
 
-import "sonos-alfred/sonos"
+import (
+	"strings"
+
+	"sonos-alfred/sonos"
+)
 
 // State is everything the hub knows, read from the cache.
 type State struct {
@@ -30,6 +34,16 @@ func nowPlayingRow(track sonos.NowPlaying) Item {
 		return row
 	}
 	row.Title = track.Title
-	row.Subtitle = track.Artist + " · " + track.Album
+	row.Subtitle = joinPresent(" · ", track.Artist, track.Album)
 	return row
+}
+
+func joinPresent(separator string, parts ...string) string {
+	var present []string
+	for _, part := range parts {
+		if part != "" {
+			present = append(present, part)
+		}
+	}
+	return strings.Join(present, separator)
 }
