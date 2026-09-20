@@ -76,3 +76,14 @@ func TestDoThatFailsPrintsWhyForTheNotificationAndExitsNonZero(t *testing.T) {
 		t.Error("stdout is empty, want the reason: the notification shows what do prints")
 	}
 }
+
+func TestAnUnknownCommandIsReportedOnStdoutAndExitsNonZero(t *testing.T) {
+	exitCode, stdout := runCommand(t, "bogus")
+
+	if exitCode == 0 {
+		t.Error("exit code = 0, want non-zero")
+	}
+	if !strings.Contains(stdout, "bogus") {
+		t.Errorf("stdout = %q, want it to name the unknown command", stdout)
+	}
+}
