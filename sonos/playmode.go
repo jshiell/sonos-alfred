@@ -52,3 +52,9 @@ func (c *Client) PlayMode(ctx context.Context) (PlayMode, error) {
 	}
 	return ParsePlayMode(values["PlayMode"])
 }
+
+// ToggleShuffle flips shuffle and keeps the repeat setting.
+func (m PlayMode) ToggleShuffle() PlayMode {
+	m.Shuffle = !m.Shuffle
+	return m
+}

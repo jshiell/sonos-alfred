@@ -47,3 +47,28 @@ func TestPlayModeReadsTheCurrentModeFromTheSpeaker(t *testing.T) {
 		t.Errorf("PlayMode = %+v, want %+v", got, want)
 	}
 }
+
+func mode(t *testing.T, wire string) sonos.PlayMode {
+	t.Helper()
+	parsed, err := sonos.ParsePlayMode(wire)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsed
+}
+
+func TestToggleShuffleKeepsTheRepeatSetting(t *testing.T) {
+	cases := []struct{ from, to string }{
+		{"NORMAL", "SHUFFLE_NOREPEAT"},
+		{"SHUFFLE_NOREPEAT", "NORMAL"},
+		{"SHUFFLE", "REPEAT_ALL"},
+		{"REPEAT_ONE", "SHUFFLE_REPEAT_ONE"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.from, func(t *testing.T) {
+			if got := mode(t, tc.from).ToggleShuffle(); got != mode(t, tc.to) {
+				t.Errorf("ToggleShuffle(%s) = %s, want %s", tc.from, got, tc.to)
+			}
+		})
+	}
+}
