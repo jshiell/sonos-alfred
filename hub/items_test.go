@@ -1,6 +1,7 @@
 package hub_test
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -273,5 +274,33 @@ func TestNoQueueRowIsMarkedWhileAStreamPlays(t *testing.T) {
 		if got := queueRowSubtitle(t, items, position); got != "" {
 			t.Errorf("queue row %d subtitle = %q, want none", position, got)
 		}
+	}
+}
+
+var (
+	kitchen    = sonos.Member{UUID: "RINCON_KITCHEN", Name: "Kitchen"}
+	office     = sonos.Member{UUID: "RINCON_OFFICE", Name: "Office"}
+	diningRoom = sonos.Member{UUID: "RINCON_DINING", Name: "Dining Room"}
+	livingRoom = sonos.Member{UUID: "RINCON_LIVING", Name: "Living Room"}
+
+	// Office coordinates a group that Dining Room has joined.
+	household = sonos.Topology{Groups: []sonos.Group{
+		{Coordinator: office, Members: []sonos.Member{office, diningRoom}},
+		{Coordinator: kitchen, Members: []sonos.Member{kitchen}},
+		{Coordinator: livingRoom, Members: []sonos.Member{livingRoom}},
+	}}
+)
+
+func TestRoomsAreListedByNameAfterTheQueueAndSetTheActiveGroupOnEnter(t *testing.T) {
+	items := hub.Items(hub.State{Topology: household, Queue: queueOf("Saxon")}, "")
+
+	got := titles(items)
+	want := []string{"Saxon", "Dining Room", "Kitchen", "Living Room", "Office"}
+	if len(got) < len(want) || !slices.Equal(got[len(got)-len(want):], want) {
+		t.Errorf("titles = %v, want the queue and then the rooms by name, last", got)
+	}
+	row := findItem(t, items, "Dining Room")
+	if !row.Valid || row.Enter != (hub.Action{Verb: "room", Payload: "RINCON_DINING"}) {
+		t.Errorf("Enter = %+v (valid %v), want room RINCON_DINING", row.Enter, row.Valid)
 	}
 }
