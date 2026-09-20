@@ -17,6 +17,8 @@ type State struct {
 	Favorites  []sonos.Item
 	Playlists  []sonos.Item
 	Queue      []sonos.Item
+	// PlayingFromQueue says NowPlaying.Track is a queue position. A stream reports Track 1 too, so Track alone can't tell.
+	PlayingFromQueue bool
 }
 
 // Item is one row Alfred shows. Enter, Cmd and Alt are what happens on Enter, ⌘-Enter and ⌥-Enter.
@@ -39,7 +41,7 @@ func Items(state State, query string) []Item {
 		items = append(items, playableRow(playable))
 	}
 	for i, track := range state.Queue {
-		items = append(items, queueRow(track, i+1))
+		items = append(items, queueRow(track, i+1, state.PlayingFromQueue && state.NowPlaying.Track == i+1))
 	}
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)
@@ -129,10 +131,14 @@ func ParseItemPayload(payload string) (sonos.Item, error) {
 }
 
 // queueRow is the track at a 1-based position in the queue.
-func queueRow(track sonos.Item, position int) Item {
-	return Item{
+func queueRow(track sonos.Item, position int, current bool) Item {
+	row := Item{
 		Title: track.Title,
 		Valid: true,
 		Enter: Action{Verb: "jump", Payload: strconv.Itoa(position)},
 	}
+	if current {
+		row.Subtitle = "Playing now"
+	}
+	return row
 }

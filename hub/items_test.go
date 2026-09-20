@@ -1,6 +1,7 @@
 package hub_test
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -226,4 +227,36 @@ func TestQueueRowsFollowPlaylistsAndJumpToTheirPosition(t *testing.T) {
 	if row.Cmd != nil || row.Alt != nil {
 		t.Errorf("Cmd = %v, Alt = %v, want none", row.Cmd, row.Alt)
 	}
+}
+
+func TestQueueRowForTheCurrentTrackIsMarked(t *testing.T) {
+	state := hub.State{
+		NowPlaying:       sonos.NowPlaying{Track: 2, Title: "Quartz"},
+		PlayingFromQueue: true,
+		Queue:            queueOf("Saxon", "Quartz", "Only Sunny When It Snows"),
+	}
+
+	items := hub.Items(state, "")
+
+	for title, want := range map[string]string{"Saxon": "", "Only Sunny When It Snows": ""} {
+		if got := findItem(t, items, title).Subtitle; got != want {
+			t.Errorf("%s subtitle = %q, want %q", title, got, want)
+		}
+	}
+	if got := queueRowSubtitle(t, items, 2); got != "Playing now" {
+		t.Errorf("current track subtitle = %q, want 'Playing now'", got)
+	}
+}
+
+// queueRowSubtitle finds the queue row that jumps to a 1-based position: the now-playing row can share a title with it.
+func queueRowSubtitle(t *testing.T, items []hub.Item, position int) string {
+	t.Helper()
+	jump := hub.Action{Verb: "jump", Payload: strconv.Itoa(position)}
+	for _, item := range items {
+		if item.Enter == jump {
+			return item.Subtitle
+		}
+	}
+	t.Fatalf("no row jumps to position %d", position)
+	return ""
 }
