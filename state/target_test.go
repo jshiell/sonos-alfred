@@ -42,3 +42,14 @@ func TestTargetFallsBackToThePlayingGroupWhenTheStoredPlayerIsGone(t *testing.T)
 		t.Errorf("coordinator = %s, want Living Room (the group that is playing)", got.Coordinator.Name)
 	}
 }
+
+func TestTargetIsThePlayingGroupWhenNothingIsStored(t *testing.T) {
+	got, ok := state.ResolveTarget(household, "", livingRoom.UUID)
+
+	if !ok {
+		t.Fatal("no target found")
+	}
+	if got.Coordinator != livingRoom {
+		t.Errorf("coordinator = %s, want Living Room (the group that is playing)", got.Coordinator.Name)
+	}
+}
