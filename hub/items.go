@@ -1,6 +1,7 @@
 package hub
 
 import (
+	"fmt"
 	"strings"
 
 	"sonos-alfred/sonos"
@@ -9,6 +10,7 @@ import (
 // State is everything the hub knows, read from the cache.
 type State struct {
 	NowPlaying sonos.NowPlaying
+	Volume     int
 }
 
 // Item is one row Alfred shows. Enter, Cmd and Alt are what happens on Enter, ⌘-Enter and ⌥-Enter.
@@ -23,7 +25,7 @@ type Item struct {
 
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
-	return []Item{nowPlayingRow(state.NowPlaying)}
+	return []Item{nowPlayingRow(state.NowPlaying), volumeRow(state.Volume)}
 }
 
 func nowPlayingRow(track sonos.NowPlaying) Item {
@@ -46,4 +48,8 @@ func joinPresent(separator string, parts ...string) string {
 		}
 	}
 	return strings.Join(present, separator)
+}
+
+func volumeRow(volume int) Item {
+	return Item{Title: fmt.Sprintf("Volume %d", volume)}
 }

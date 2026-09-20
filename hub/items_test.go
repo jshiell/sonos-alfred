@@ -59,3 +59,14 @@ func TestNowPlayingSubtitleSkipsMissingArtistOrAlbum(t *testing.T) {
 		})
 	}
 }
+
+func TestVolumeRowFollowsNowPlaying(t *testing.T) {
+	items := hub.Items(hub.State{Volume: 12}, "")
+
+	if len(items) < 2 {
+		t.Fatalf("got %d items, want at least 2", len(items))
+	}
+	if items[0].Title != "Nothing playing" || items[1].Title != "Volume 12" {
+		t.Errorf("first two rows = %q, %q; want the now-playing row then 'Volume 12'", items[0].Title, items[1].Title)
+	}
+}
