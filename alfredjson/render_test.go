@@ -2,11 +2,13 @@ package alfredjson_test
 
 import (
 	"encoding/json"
+	"os"
 	"reflect"
 	"testing"
 
 	"sonos-alfred/alfredjson"
 	"sonos-alfred/hub"
+	"sonos-alfred/sonos"
 )
 
 // assertJSON compares meaning, not formatting.
@@ -74,4 +76,26 @@ func TestRenderAsksAlfredToRunAgainWhileARefreshIsPending(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertJSON(t, got, `{"rerun": 0.3, "items":[{"title": "Loading Sonos…", "valid": false}]}`)
+}
+
+func TestWarmHouseholdMatchesTheGoldenFile(t *testing.T) {
+	kitchen := sonos.Member{UUID: "RINCON_KITCHEN", Name: "Kitchen"}
+	state := hub.State{
+		NowPlaying: sonos.NowPlaying{Title: "Saxon", Artist: "Marbles", Album: "Marbles (20th Anniversary)"},
+		Volume:     12,
+		Favorites:  []sonos.Item{{Title: "Niero:Atlas", URI: "x-rincon-cpcontainer:1004"}},
+		Topology:   sonos.Topology{Groups: []sonos.Group{{Coordinator: kitchen, Members: []sonos.Member{kitchen}}}},
+		Target:     kitchen.UUID,
+	}
+	golden, err := os.ReadFile("testdata/warm-household.golden.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := alfredjson.Render(hub.Items(state, ""), false)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertJSON(t, got, string(golden))
 }

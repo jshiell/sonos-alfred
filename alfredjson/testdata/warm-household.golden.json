@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "title": "Saxon",
+      "subtitle": "Marbles · Marbles (20th Anniversary)",
+      "arg": "playpause:",
+      "valid": true,
+      "mods": {"cmd": {"arg": "next:", "valid": true}, "alt": {"arg": "previous:", "valid": true}}
+    },
+    {
+      "title": "Volume 12",
+      "subtitle": "↩ up 5 · ⌥↩ down 5",
+      "arg": "volume-change:5",
+      "valid": true,
+      "mods": {"cmd": {"valid": false}, "alt": {"arg": "volume-change:-5", "valid": true}}
+    },
+    {
+      "title": "Niero:Atlas",
+      "arg": "play-item:metadata=&uri=x-rincon-cpcontainer%253A1004",
+      "valid": true,
+      "mods": {
+        "cmd": {"arg": "add-item:metadata=&uri=x-rincon-cpcontainer%253A1004", "valid": true},
+        "alt": {"arg": "play-next-item:metadata=&uri=x-rincon-cpcontainer%253A1004", "valid": true}
+      }
+    },
+    {
+      "title": "Kitchen",
+      "subtitle": "Active",
+      "arg": "room:RINCON_KITCHEN",
+      "valid": true,
+      "mods": {"cmd": {"valid": false}, "alt": {"valid": false}}
+    },
+    {"title": "Shuffle: off", "arg": "shuffle:", "valid": true, "mods": {"cmd": {"valid": false}, "alt": {"valid": false}}},
+    {"title": "Repeat: off", "arg": "repeat:", "valid": true, "mods": {"cmd": {"valid": false}, "alt": {"valid": false}}},
+    {"title": "Sleep in 15 minutes", "arg": "sleep:15", "valid": true, "mods": {"cmd": {"valid": false}, "alt": {"valid": false}}},
+    {"title": "Sleep in 30 minutes", "arg": "sleep:30", "valid": true, "mods": {"cmd": {"valid": false}, "alt": {"valid": false}}},
+    {"title": "Sleep in 60 minutes", "arg": "sleep:60", "valid": true, "mods": {"cmd": {"valid": false}, "alt": {"valid": false}}}
+  ]
+}
