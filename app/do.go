@@ -36,6 +36,8 @@ func Do(ctx context.Context, env Env, encoded string) error {
 			return speaker.Pause(ctx)
 		}
 		return speaker.Play(ctx)
+	case "next":
+		return speaker.Next(ctx)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }

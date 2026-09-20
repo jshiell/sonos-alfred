@@ -13,6 +13,7 @@ type Backend interface {
 	TransportState(ctx context.Context) (TransportState, error)
 	Play(ctx context.Context) error
 	Pause(ctx context.Context) error
+	Next(ctx context.Context) error
 	PlayingFromQueue(ctx context.Context) (bool, error)
 	GroupVolume(ctx context.Context) (int, error)
 	PlayMode(ctx context.Context) (PlayMode, error)
