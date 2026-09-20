@@ -260,3 +260,18 @@ func queueRowSubtitle(t *testing.T, items []hub.Item, position int) string {
 	t.Fatalf("no row jumps to position %d", position)
 	return ""
 }
+
+func TestNoQueueRowIsMarkedWhileAStreamPlays(t *testing.T) {
+	state := hub.State{
+		NowPlaying: sonos.NowPlaying{Track: 1, Title: "Groove Salad"}, // a stream reports Track 1
+		Queue:      queueOf("Saxon", "Quartz"),
+	}
+
+	items := hub.Items(state, "")
+
+	for position := 1; position <= 2; position++ {
+		if got := queueRowSubtitle(t, items, position); got != "" {
+			t.Errorf("queue row %d subtitle = %q, want none", position, got)
+		}
+	}
+}
