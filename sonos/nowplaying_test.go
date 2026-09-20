@@ -25,3 +25,17 @@ func TestNowPlayingReadsTheCurrentTrack(t *testing.T) {
 		t.Errorf("NowPlaying = %+v, want %+v", got, want)
 	}
 }
+
+func TestNowPlayingToleratesEmptyMetadata(t *testing.T) {
+	// Recorded after the transport was emptied: Track 0, empty TrackURI and TrackMetaData.
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, recorded(t, "GetPositionInfo", 5))
+
+	got, err := sonos.NewClient(speaker.URL).NowPlaying(context.Background())
+
+	if err != nil {
+		t.Fatalf("empty metadata should not be an error: %v", err)
+	}
+	if got != (sonos.NowPlaying{}) {
+		t.Errorf("NowPlaying = %+v, want nothing playing", got)
+	}
+}

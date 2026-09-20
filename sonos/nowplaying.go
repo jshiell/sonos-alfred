@@ -21,6 +21,9 @@ func (c *Client) NowPlaying(ctx context.Context) (NowPlaying, error) {
 		return NowPlaying{}, err
 	}
 	track, _ := strconv.Atoi(values["Track"])
+	if values["TrackMetaData"] == "" {
+		return NowPlaying{Track: track}, nil
+	}
 
 	var didl struct {
 		Title  string `xml:"item>title"`
