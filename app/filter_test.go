@@ -131,3 +131,23 @@ func TestFilterOnAColdCacheShowsLoadingSpawnsARefreshAndReruns(t *testing.T) {
 		t.Error("rerun unset while a refresh is pending, want it set")
 	}
 }
+
+func TestFilterRendersAStaleCacheAndSpawnsARefreshAndReruns(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, hub.State{NowPlaying: sonos.NowPlaying{Track: 1, Title: "Nightcall"}}); err != nil {
+		t.Fatal(err)
+	}
+	w.clock.now = w.clock.now.Add(time.Minute)
+
+	got := runFilter(t, w, "")
+
+	if len(got.Items) == 0 || got.Items[0].Title != "Nightcall" {
+		t.Errorf("titles = %v, want the old now-playing row first", got.titles())
+	}
+	if w.spawns != 1 {
+		t.Errorf("spawned %d refreshes, want 1", w.spawns)
+	}
+	if got.Rerun == 0 {
+		t.Error("rerun unset while a refresh is pending, want it set")
+	}
+}
