@@ -70,3 +70,17 @@ func TestVolumeRowFollowsNowPlaying(t *testing.T) {
 		t.Errorf("first two rows = %q, %q; want the now-playing row then 'Volume 12'", items[0].Title, items[1].Title)
 	}
 }
+
+func TestVolumeRowStepsTheVolumeUpOnEnterAndDownOnAlt(t *testing.T) {
+	row := hub.Items(hub.State{Volume: 12}, "")[1]
+
+	if !row.Valid || row.Enter != (hub.Action{Verb: "volume-change", Payload: "5"}) {
+		t.Errorf("Enter = %+v (valid %v), want volume-change 5", row.Enter, row.Valid)
+	}
+	if row.Alt == nil || *row.Alt != (hub.Action{Verb: "volume-change", Payload: "-5"}) {
+		t.Errorf("Alt = %+v, want volume-change -5", row.Alt)
+	}
+	if row.Cmd != nil {
+		t.Errorf("Cmd = %+v, want none", row.Cmd)
+	}
+}

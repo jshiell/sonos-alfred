@@ -2,6 +2,7 @@ package hub
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"sonos-alfred/sonos"
@@ -50,6 +51,15 @@ func joinPresent(separator string, parts ...string) string {
 	return strings.Join(present, separator)
 }
 
+const volumeStep = 5
+
 func volumeRow(volume int) Item {
-	return Item{Title: fmt.Sprintf("Volume %d", volume)}
+	down := Action{Verb: "volume-change", Payload: strconv.Itoa(-volumeStep)}
+	return Item{
+		Title:    fmt.Sprintf("Volume %d", volume),
+		Subtitle: fmt.Sprintf("↩ up %d · ⌥↩ down %d", volumeStep, volumeStep),
+		Valid:    true,
+		Enter:    Action{Verb: "volume-change", Payload: strconv.Itoa(volumeStep)},
+		Alt:      &down,
+	}
 }
