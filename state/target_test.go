@@ -53,3 +53,14 @@ func TestTargetIsThePlayingGroupWhenNothingIsStored(t *testing.T) {
 		t.Errorf("coordinator = %s, want Living Room (the group that is playing)", got.Coordinator.Name)
 	}
 }
+
+func TestTargetIsTheFirstGroupWhenNothingIsStoredOrPlaying(t *testing.T) {
+	got, ok := state.ResolveTarget(household, "", "")
+
+	if !ok {
+		t.Fatal("no target found")
+	}
+	if got.Coordinator != kitchen {
+		t.Errorf("coordinator = %s, want Kitchen (the first group)", got.Coordinator.Name)
+	}
+}
