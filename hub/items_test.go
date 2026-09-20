@@ -96,3 +96,15 @@ func TestTypingVolAndANumberOffersToSetThatVolume(t *testing.T) {
 		t.Errorf("first row = %q valid=%v enter=%+v, want 'Set volume 35' doing volume-set 35", row.Title, row.Valid, row.Enter)
 	}
 }
+
+func TestTypedVolumeIsClampedToZeroThroughHundred(t *testing.T) {
+	for query, want := range map[string]string{"vol 150": "100", "vol 100": "100", "vol 0": "0", "vol -5": "0", "vol 007": "7"} {
+		t.Run(query, func(t *testing.T) {
+			row := hub.Items(hub.State{}, query)[0]
+
+			if row.Title != "Set volume "+want || row.Enter != (hub.Action{Verb: "volume-set", Payload: want}) {
+				t.Errorf("first row = %q enter=%+v, want volume %s", row.Title, row.Enter, want)
+			}
+		})
+	}
+}

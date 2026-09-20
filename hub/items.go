@@ -35,14 +35,19 @@ func Items(state State, query string) []Item {
 
 // setVolumeRow answers a query like "vol 35".
 func setVolumeRow(query string) (Item, bool) {
-	number, found := strings.CutPrefix(query, "vol ")
+	typed, found := strings.CutPrefix(query, "vol ")
 	if !found {
 		return Item{}, false
 	}
+	number, err := strconv.Atoi(typed)
+	if err != nil {
+		return Item{}, false
+	}
+	volume := strconv.Itoa(min(max(number, 0), 100))
 	return Item{
-		Title: "Set volume " + number,
+		Title: "Set volume " + volume,
 		Valid: true,
-		Enter: Action{Verb: "volume-set", Payload: number},
+		Enter: Action{Verb: "volume-set", Payload: volume},
 	}, true
 }
 
