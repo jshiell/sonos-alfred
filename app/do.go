@@ -17,6 +17,9 @@ func Do(ctx context.Context, env Env, encoded string) error {
 	if err != nil {
 		return err
 	}
+	if action.Verb == "room" {
+		return state.NewSettings(env.Dir).SetActiveGroup(action.Payload)
+	}
 	var current hub.State
 	if _, found := state.NewCache(env.Dir, env.Now).ReadWithAge(StateEntry, &current); !found {
 		return errors.New("Sonos hasn't been read yet, try again in a moment")

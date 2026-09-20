@@ -10,6 +10,7 @@ import (
 	"sonos-alfred/hub"
 	"sonos-alfred/internal/fakespeaker"
 	"sonos-alfred/sonos"
+	"sonos-alfred/state"
 )
 
 const diningRoomUUID = "RINCON_11111111111101400" // the speaker the recorded exchanges came from
@@ -205,5 +206,17 @@ func TestDoJumpsToAQueueTrackOnTheTargetsQueue(t *testing.T) {
 
 	if err := app.Do(context.Background(), w.env, "jump:3"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestDoRemembersTheChosenRoomWithoutTouchingASpeaker(t *testing.T) {
+	w := newWorkflow(t) // nothing cached, and any request fails the test
+
+	if err := app.Do(context.Background(), w.env, "room:RINCON_KITCHEN"); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := state.NewSettings(w.env.Dir).ActiveGroup(); got != "RINCON_KITCHEN" {
+		t.Errorf("active group = %q, want RINCON_KITCHEN", got)
 	}
 }
