@@ -8,6 +8,7 @@ import (
 	"io"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -140,4 +141,14 @@ func TestWhatDoPrintsIsNotifiedOnlyWhenItPrintedSomething(t *testing.T) {
 		"text":                     "{query}",
 		"onlyshowifquerypopulated": true,
 	})
+}
+
+func TestNoTemplateTextIsLeftInTheWorkflow(t *testing.T) {
+	plist := string(contents(t, file(t, packageWorkflow(t), "info.plist")))
+
+	for _, leftover := range []string{"Script Filter JSON format", "Generate results into Alfred", "Alfred uses JSON", "test.sh"} {
+		if strings.Contains(plist, leftover) {
+			t.Errorf("info.plist still contains the template text %q", leftover)
+		}
+	}
 }

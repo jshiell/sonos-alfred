@@ -104,9 +104,9 @@
 				<key>scriptfile</key>
 				<string></string>
 				<key>subtext</key>
-				<string>Generate results into Alfred from JSON</string>
+				<string>Control your Sonos speakers</string>
 				<key>title</key>
-				<string>Script Filter JSON format</string>
+				<string>Sonos</string>
 				<key>type</key>
 				<integer>11</integer>
 				<key>withspace</key>
@@ -154,8 +154,6 @@
 		</dict>
 		<key>50B0CD10-4D52-4898-9C05-DD3A34A829C3</key>
 		<dict>
-			<key>note</key>
-			<string>Alfred uses JSON as the default Script Filter output. This is the recommended output.</string>
 			<key>xpos</key>
 			<real>70</real>
 			<key>ypos</key>
