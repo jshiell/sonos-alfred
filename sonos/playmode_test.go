@@ -72,3 +72,21 @@ func TestToggleShuffleKeepsTheRepeatSetting(t *testing.T) {
 		})
 	}
 }
+
+func TestCycleRepeatGoesOffAllOneAndKeepsShuffle(t *testing.T) {
+	cases := []struct{ from, to string }{
+		{"NORMAL", "REPEAT_ALL"},
+		{"REPEAT_ALL", "REPEAT_ONE"},
+		{"REPEAT_ONE", "NORMAL"},
+		{"SHUFFLE_NOREPEAT", "SHUFFLE"},
+		{"SHUFFLE", "SHUFFLE_REPEAT_ONE"},
+		{"SHUFFLE_REPEAT_ONE", "SHUFFLE_NOREPEAT"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.from, func(t *testing.T) {
+			if got := mode(t, tc.from).CycleRepeat(); got != mode(t, tc.to) {
+				t.Errorf("CycleRepeat(%s) = %s, want %s", tc.from, got, tc.to)
+			}
+		})
+	}
+}

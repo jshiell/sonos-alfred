@@ -58,3 +58,16 @@ func (m PlayMode) ToggleShuffle() PlayMode {
 	m.Shuffle = !m.Shuffle
 	return m
 }
+
+// CycleRepeat steps repeat through off, all, one and back to off, keeping shuffle.
+func (m PlayMode) CycleRepeat() PlayMode {
+	switch m.Repeat {
+	case RepeatOff:
+		m.Repeat = RepeatAll
+	case RepeatAll:
+		m.Repeat = RepeatOne
+	default:
+		m.Repeat = RepeatOff
+	}
+	return m
+}
