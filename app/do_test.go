@@ -315,3 +315,54 @@ func TestDoExpiresTheCacheAfterAChangeSoTheNextFilterRefreshes(t *testing.T) {
 		t.Errorf("expired state found=%v target=%q, want the old state kept for rendering", found, kept.Target)
 	}
 }
+
+func TestDoReportsASpeakerFailureAndLeavesTheCacheAlone(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t,
+		fakespeaker.Recorded(t, "GetTransportInfo", 0), // PLAYING
+		fakespeaker.Recorded(t, "Pause", 2),            // the speaker answers 500
+	)
+
+	err := app.Do(context.Background(), w.env, "playpause:")
+
+	if err == nil {
+		t.Fatal("Do = nil, want the speaker's failure")
+	}
+	var fresh hub.State
+	if !w.cache.Read(app.StateEntry, time.Hour, &fresh) {
+		t.Error("the cache was expired by an action that failed")
+	}
+}
+
+func TestDoRefusesWhatItCannotUnderstandOrDo(t *testing.T) {
+	cases := map[string]string{
+		"an action nobody defined": "dance:",
+		"no verb at all":           "nonsense",
+	}
+	for name, encoded := range cases {
+		t.Run(name, func(t *testing.T) {
+			w := newWorkflow(t)
+			if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+				t.Fatal(err)
+			}
+			w.speakersAre(t)
+
+			if err := app.Do(context.Background(), w.env, encoded); err == nil {
+				t.Errorf("Do(%q) = nil, want an error", encoded)
+			}
+		})
+	}
+}
+
+func TestDoAsksToTryAgainWhenNothingHasBeenReadYet(t *testing.T) {
+	w := newWorkflow(t)
+
+	err := app.Do(context.Background(), w.env, "next:")
+
+	if err == nil || !strings.Contains(err.Error(), "try again") {
+		t.Errorf("Do = %v, want an error asking to try again", err)
+	}
+}
