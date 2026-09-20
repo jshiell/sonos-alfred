@@ -50,3 +50,8 @@ func parseDIDL(didl string) ([]Item, error) {
 	}
 	return items, nil
 }
+
+// Playlists lists the household's Sonos playlists.
+func (c *Client) Playlists(ctx context.Context) ([]Item, error) {
+	return c.browse(ctx, "SQ:")
+}

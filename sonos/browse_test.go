@@ -55,3 +55,16 @@ func TestFavoritesListsPlayableAndShortcutFavorites(t *testing.T) {
 		t.Errorf("Sonos Radio shortcut URI = %q, want empty (not playable)", shortcut.URI)
 	}
 }
+
+func TestPlaylistsIsEmptyWhenTheHouseholdHasNoSonosPlaylists(t *testing.T) {
+	speaker := contentDirectorySpeaker(t, "SQ:", "browse-playlists-empty.xml")
+
+	playlists, err := sonos.NewClient(speaker.URL).Playlists(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(playlists) != 0 {
+		t.Errorf("got %d playlists, want none: %+v", len(playlists), playlists)
+	}
+}
