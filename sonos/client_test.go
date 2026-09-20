@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"sonos-alfred/internal/fakespeaker"
 	"sonos-alfred/sonos"
@@ -77,5 +79,22 @@ func TestCallEscapesArgumentsExactlyAsTheSpeakerAccepted(t *testing.T) {
 	}
 	if values["NumTracksAdded"] != "12" {
 		t.Errorf("NumTracksAdded = %q, want 12", values["NumTracksAdded"])
+	}
+}
+
+func TestCallGivesUpOnASpeakerThatNeverAnswers(t *testing.T) {
+	release := make(chan struct{})
+	silent := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { <-release }))
+	t.Cleanup(func() { close(release); silent.Close() })
+	client := sonos.NewClient(silent.URL).WithTimeout(50 * time.Millisecond)
+
+	started := time.Now()
+	err := client.Play(context.Background())
+
+	if err == nil {
+		t.Fatal("Play = nil against a speaker that never answers, want an error")
+	}
+	if elapsed := time.Since(started); elapsed > 2*time.Second {
+		t.Errorf("gave up after %v, want about 50ms", elapsed)
 	}
 }

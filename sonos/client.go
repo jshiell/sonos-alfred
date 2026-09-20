@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // Service identifies a UPnP service on a speaker.
@@ -34,15 +35,29 @@ type Arg struct {
 type Client struct {
 	baseURL string
 	http    *http.Client
+	timeout time.Duration
 }
+
+// defaultTimeout is how long one call may take. Speakers on the network answer in tens of milliseconds, so a speaker
+// that hasn't answered by now is off or unreachable.
+const defaultTimeout = 5 * time.Second
 
 // NewClient returns a client for the speaker at baseURL, e.g. "http://10.0.0.5:1400".
 func NewClient(baseURL string) *Client {
-	return &Client{baseURL: baseURL, http: http.DefaultClient}
+	return &Client{baseURL: baseURL, http: http.DefaultClient, timeout: defaultTimeout}
+}
+
+// WithTimeout returns a client that gives up on a call after d.
+func (c *Client) WithTimeout(d time.Duration) *Client {
+	copied := *c
+	copied.timeout = d
+	return &copied
 }
 
 // Call performs a SOAP action and returns the response's values by name.
 func (c *Client) Call(ctx context.Context, service Service, action string, args ...Arg) (map[string]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
 	var body strings.Builder
 	body.WriteString(`<?xml version="1.0" encoding="utf-8"?>`)
 	body.WriteString(`<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>`)
