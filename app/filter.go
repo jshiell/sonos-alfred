@@ -15,6 +15,9 @@ const StateEntry = "state"
 // freshFor is how long a refresh's result is trusted before filter asks for another.
 const freshFor = 10 * time.Second
 
+// lockStaleAfter is how long a refresh may hold the lock before it is presumed dead.
+const lockStaleAfter = 30 * time.Second
+
 // Env is what the commands depend on. Dir is the workflow's data directory.
 type Env struct {
 	Dir   string
@@ -31,7 +34,8 @@ func Filter(env Env, query string) ([]byte, error) {
 	}
 	refreshPending := false
 	if !found || age > freshFor {
-		refreshPending = env.Spawn() == nil
+		lock := state.NewRefreshLock(env.Dir, env.Now, lockStaleAfter)
+		refreshPending = lock.Held() || env.Spawn() == nil
 	}
 	return alfredjson.Render(hub.Items(current, query), refreshPending)
 }

@@ -151,3 +151,23 @@ func TestFilterRendersAStaleCacheAndSpawnsARefreshAndReruns(t *testing.T) {
 		t.Error("rerun unset while a refresh is pending, want it set")
 	}
 }
+
+func TestFilterDoesNotSpawnASecondRefreshButKeepsRerunningWhileOneIsRunning(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, hub.State{}); err != nil {
+		t.Fatal(err)
+	}
+	w.clock.now = w.clock.now.Add(time.Minute)
+	if _, acquired := state.NewRefreshLock(w.env.Dir, w.clock.Now, time.Hour).TryAcquire(); !acquired {
+		t.Fatal("could not take the refresh lock")
+	}
+
+	got := runFilter(t, w, "")
+
+	if w.spawns != 0 {
+		t.Errorf("spawned %d refreshes while one was running, want 0", w.spawns)
+	}
+	if got.Rerun == 0 {
+		t.Error("rerun unset while a refresh is running, want it set")
+	}
+}
