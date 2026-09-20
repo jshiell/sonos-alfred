@@ -124,6 +124,18 @@ func TestGarbageAfterVolOffersNoSetVolumeRow(t *testing.T) {
 	}
 }
 
+// assertRowsInOrder checks the titles appear one straight after another, in this order, wherever they sit in the list.
+func assertRowsInOrder(t *testing.T, items []hub.Item, want ...string) {
+	t.Helper()
+	got := titles(items)
+	for start := 0; start+len(want) <= len(got); start++ {
+		if slices.Equal(got[start:start+len(want)], want) {
+			return
+		}
+	}
+	t.Errorf("titles = %v, want %v one straight after another", got, want)
+}
+
 func findItem(t *testing.T, items []hub.Item, title string) hub.Item {
 	t.Helper()
 	for _, item := range items {
@@ -191,10 +203,7 @@ func TestPlaylistsFollowFavoritesWithTheSameActions(t *testing.T) {
 
 	items := hub.Items(hub.State{Favorites: []sonos.Item{album}, Playlists: []sonos.Item{playlist}}, "")
 
-	got := titles(items)
-	if len(got) < 2 || got[len(got)-2] != "Niero:Atlas" || got[len(got)-1] != "Focus" {
-		t.Errorf("titles = %v, want the favorite then the playlist last", got)
-	}
+	assertRowsInOrder(t, items, "Niero:Atlas", "Focus")
 	row := findItem(t, items, "Focus")
 	assertItemAction(t, "Enter", row.Enter, "play-item", playlist)
 	if row.Cmd == nil || row.Alt == nil {
@@ -217,10 +226,7 @@ func TestQueueRowsFollowPlaylistsAndJumpToTheirPosition(t *testing.T) {
 
 	items := hub.Items(hub.State{Playlists: []sonos.Item{playlist}, Queue: queueOf("Saxon", "Quartz", "Only Sunny When It Snows")}, "")
 
-	got := titles(items)
-	if len(got) < 4 || got[len(got)-4] != "Focus" || got[len(got)-3] != "Saxon" || got[len(got)-1] != "Only Sunny When It Snows" {
-		t.Errorf("titles = %v, want the playlist and then the queue in order, last", got)
-	}
+	assertRowsInOrder(t, items, "Focus", "Saxon", "Quartz", "Only Sunny When It Snows")
 	row := findItem(t, items, "Only Sunny When It Snows")
 	if !row.Valid || row.Enter != (hub.Action{Verb: "jump", Payload: "3"}) {
 		t.Errorf("Enter = %+v (valid %v), want jump 3", row.Enter, row.Valid)
@@ -294,11 +300,7 @@ var (
 func TestRoomsAreListedByNameAfterTheQueueAndSetTheActiveGroupOnEnter(t *testing.T) {
 	items := hub.Items(hub.State{Topology: household, Queue: queueOf("Saxon")}, "")
 
-	got := titles(items)
-	want := []string{"Saxon", "Dining Room", "Kitchen", "Living Room", "Office"}
-	if len(got) < len(want) || !slices.Equal(got[len(got)-len(want):], want) {
-		t.Errorf("titles = %v, want the queue and then the rooms by name, last", got)
-	}
+	assertRowsInOrder(t, items, "Saxon", "Dining Room", "Kitchen", "Living Room", "Office")
 	row := findItem(t, items, "Dining Room")
 	if !row.Valid || row.Enter != (hub.Action{Verb: "room", Payload: "RINCON_DINING"}) {
 		t.Errorf("Enter = %+v (valid %v), want room RINCON_DINING", row.Enter, row.Valid)
@@ -312,5 +314,22 @@ func TestRoomsInTheActiveGroupAreMarked(t *testing.T) {
 		if got := findItem(t, items, room).Subtitle; got != want {
 			t.Errorf("%s subtitle = %q, want %q", room, got, want)
 		}
+	}
+}
+
+func TestShuffleRowFollowsTheRoomsShowsTheModeAndTogglesOnEnter(t *testing.T) {
+	for shuffle, want := range map[bool]string{false: "Shuffle: off", true: "Shuffle: on"} {
+		t.Run(want, func(t *testing.T) {
+			items := hub.Items(hub.State{Topology: household, PlayMode: sonos.PlayMode{Shuffle: shuffle}}, "")
+
+			row := findItem(t, items, want)
+			if !row.Valid || row.Enter != (hub.Action{Verb: "shuffle"}) {
+				t.Errorf("Enter = %+v (valid %v), want shuffle", row.Enter, row.Valid)
+			}
+			got := titles(items)
+			if got[len(got)-1] != want || got[len(got)-2] != "Office" {
+				t.Errorf("titles = %v, want the shuffle row straight after the rooms", got)
+			}
+		})
 	}
 }

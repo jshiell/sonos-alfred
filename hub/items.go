@@ -18,6 +18,7 @@ type State struct {
 	Playlists  []sonos.Item
 	Queue      []sonos.Item
 	Topology   sonos.Topology
+	PlayMode   sonos.PlayMode
 	// Target is the coordinator UUID of the group being controlled.
 	Target string
 	// PlayingFromQueue says NowPlaying.Track is a queue position. A stream reports Track 1 too, so Track alone can't tell.
@@ -49,6 +50,7 @@ func Items(state State, query string) []Item {
 	for _, room := range roomsByName(state.Topology, state.Target) {
 		items = append(items, roomRow(room))
 	}
+	items = append(items, shuffleRow(state.PlayMode))
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)
 	}
@@ -176,4 +178,12 @@ func roomRow(r room) Item {
 		row.Subtitle = "Active"
 	}
 	return row
+}
+
+func shuffleRow(mode sonos.PlayMode) Item {
+	title := "Shuffle: off"
+	if mode.Shuffle {
+		title = "Shuffle: on"
+	}
+	return Item{Title: title, Valid: true, Enter: Action{Verb: "shuffle"}}
 }
