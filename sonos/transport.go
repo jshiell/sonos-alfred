@@ -13,3 +13,9 @@ func (c *Client) Pause(ctx context.Context) error {
 	_, err := c.Call(ctx, AVTransport, "Pause", Arg{"InstanceID", "0"})
 	return err
 }
+
+// Next skips to the next track.
+func (c *Client) Next(ctx context.Context) error {
+	_, err := c.Call(ctx, AVTransport, "Next", Arg{"InstanceID", "0"})
+	return err
+}
