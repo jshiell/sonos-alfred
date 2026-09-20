@@ -109,3 +109,15 @@ func TestDoChangesTheGroupVolumeByTheStep(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoSetsTheGroupVolume(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t, fakespeaker.Recorded(t, "SetGroupVolume", 0)) // DesiredVolume 12
+
+	if err := app.Do(context.Background(), w.env, "volume-set:12"); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -48,6 +48,12 @@ func Do(ctx context.Context, env Env, encoded string) error {
 		}
 		_, err = speaker.ChangeGroupVolume(ctx, step)
 		return err
+	case "volume-set":
+		volume, err := strconv.Atoi(action.Payload)
+		if err != nil {
+			return fmt.Errorf("bad volume %q", action.Payload)
+		}
+		return speaker.SetGroupVolume(ctx, volume)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }
