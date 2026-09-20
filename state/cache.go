@@ -55,20 +55,34 @@ func replaceFile(path string, data []byte) error {
 	return nil
 }
 
-// Read fills into and reports true when name holds a value.
+// Read fills into and reports true when name holds a value no older than ttl.
 func (c *Cache) Read(name string, ttl time.Duration, into any) bool {
-	data, err := os.ReadFile(c.path(name))
-	if err != nil {
-		return false
-	}
-	var e entry
-	if json.Unmarshal(data, &e) != nil {
-		return false
-	}
-	if c.now().Sub(e.WrittenAt) > ttl {
+	e, ok := c.load(name)
+	if !ok || c.now().Sub(e.WrittenAt) > ttl {
 		return false
 	}
 	return json.Unmarshal(e.Value, into) == nil
+}
+
+// ReadWithAge fills into with name's value however old it is, and says how old that is.
+func (c *Cache) ReadWithAge(name string, into any) (age time.Duration, found bool) {
+	e, ok := c.load(name)
+	if !ok || json.Unmarshal(e.Value, into) != nil {
+		return 0, false
+	}
+	return c.now().Sub(e.WrittenAt), true
+}
+
+func (c *Cache) load(name string) (entry, bool) {
+	data, err := os.ReadFile(c.path(name))
+	if err != nil {
+		return entry{}, false
+	}
+	var e entry
+	if json.Unmarshal(data, &e) != nil {
+		return entry{}, false
+	}
+	return e, true
 }
 
 func (c *Cache) path(name string) string {

@@ -128,3 +128,25 @@ func TestCacheLeavesNoTemporaryFilesBehind(t *testing.T) {
 		t.Errorf("directory holds %d files after writing 2 names, want 2: %v", len(files), files)
 	}
 }
+
+func TestCacheReadWithAgeReturnsAStaleValueAndHowOldItIs(t *testing.T) {
+	clk := newClock()
+	cache := state.NewCache(t.TempDir(), clk.Now)
+	if err := cache.Write("rooms", rooms{Names: []string{"Kitchen"}}); err != nil {
+		t.Fatal(err)
+	}
+	clk.now = clk.now.Add(2 * time.Hour)
+
+	var got rooms
+	age, found := cache.ReadWithAge("rooms", &got)
+
+	if !found {
+		t.Fatal("found = false, want true for an old but intact value")
+	}
+	if age != 2*time.Hour {
+		t.Errorf("age = %v, want 2h", age)
+	}
+	if len(got.Names) != 1 || got.Names[0] != "Kitchen" {
+		t.Errorf("got %+v, want Kitchen", got)
+	}
+}
