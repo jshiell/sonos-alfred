@@ -17,12 +17,46 @@ func NewRefreshLock(dir string, now func() time.Time, staleAfter time.Duration) 
 	return &RefreshLock{path: filepath.Join(dir, "refresh.lock"), now: now, staleAfter: staleAfter}
 }
 
-// TryAcquire takes the lock if nobody holds it. The returned function gives it back.
+// TryAcquire takes the lock if nobody holds it, or if the holder has had it longer than the stale time
+// (it crashed). The returned function gives the lock back.
 func (l *RefreshLock) TryAcquire() (release func(), acquired bool) {
-	file, err := os.OpenFile(l.path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
-	if err != nil {
+	release = func() { os.Remove(l.path) }
+	if l.create() {
+		return release, true
+	}
+	if !l.isStale() {
 		return nil, false
 	}
-	file.Close()
-	return func() { os.Remove(l.path) }, true
+	os.Remove(l.path)
+	if l.create() {
+		return release, true
+	}
+	return nil, false
+}
+
+// create makes the lock file already holding its timestamp, so a rival never sees it empty.
+func (l *RefreshLock) create() bool {
+	temp, err := os.CreateTemp(filepath.Dir(l.path), ".lock-*")
+	if err != nil {
+		return false
+	}
+	defer os.Remove(temp.Name())
+	_, writeErr := temp.WriteString(l.now().Format(time.RFC3339Nano))
+	if closeErr := temp.Close(); writeErr != nil || closeErr != nil {
+		return false
+	}
+	return os.Link(temp.Name(), l.path) == nil
+}
+
+// isStale is true for a lock older than the stale time, and for one too damaged to tell.
+func (l *RefreshLock) isStale() bool {
+	data, err := os.ReadFile(l.path)
+	if err != nil {
+		return true
+	}
+	acquiredAt, err := time.Parse(time.RFC3339Nano, string(data))
+	if err != nil {
+		return true
+	}
+	return l.now().Sub(acquiredAt) > l.staleAfter
 }

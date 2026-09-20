@@ -35,3 +35,25 @@ func TestRefreshLockCanBeTakenAgainOnceReleased(t *testing.T) {
 		t.Error("TryAcquire = false after release, want true")
 	}
 }
+
+func TestRefreshLockIsRecoveredFromAHolderThatNeverReleased(t *testing.T) {
+	dir := t.TempDir()
+	clk := newClock()
+	state.NewRefreshLock(dir, clk.Now, lockStaleAfter).TryAcquire() // then the process dies
+	clk.now = clk.now.Add(lockStaleAfter + time.Second)
+
+	if _, recovered := state.NewRefreshLock(dir, clk.Now, lockStaleAfter).TryAcquire(); !recovered {
+		t.Error("TryAcquire = false for a lock older than the stale time, want true")
+	}
+}
+
+func TestRefreshLockIsStillHeldJustBeforeItGoesStale(t *testing.T) {
+	dir := t.TempDir()
+	clk := newClock()
+	state.NewRefreshLock(dir, clk.Now, lockStaleAfter).TryAcquire()
+	clk.now = clk.now.Add(lockStaleAfter - time.Second)
+
+	if _, taken := state.NewRefreshLock(dir, clk.Now, lockStaleAfter).TryAcquire(); taken {
+		t.Error("TryAcquire = true for a lock younger than the stale time, want false")
+	}
+}
