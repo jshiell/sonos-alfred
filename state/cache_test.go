@@ -37,3 +37,17 @@ func TestCacheReturnsAFreshValueAsAHit(t *testing.T) {
 		t.Errorf("got %+v, want Kitchen and Office", got)
 	}
 }
+
+func TestCacheTreatsAStaleValueAsAMiss(t *testing.T) {
+	clk := newClock()
+	cache := state.NewCache(t.TempDir(), clk.Now)
+	if err := cache.Write("rooms", rooms{Names: []string{"Kitchen"}}); err != nil {
+		t.Fatal(err)
+	}
+	clk.now = clk.now.Add(time.Minute + time.Second)
+
+	var got rooms
+	if cache.Read("rooms", time.Minute, &got) {
+		t.Errorf("hit = true for a value older than the TTL, got %+v", got)
+	}
+}

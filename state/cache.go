@@ -45,6 +45,9 @@ func (c *Cache) Read(name string, ttl time.Duration, into any) bool {
 	if json.Unmarshal(data, &e) != nil {
 		return false
 	}
+	if c.now().Sub(e.WrittenAt) > ttl {
+		return false
+	}
 	return json.Unmarshal(e.Value, into) == nil
 }
 
