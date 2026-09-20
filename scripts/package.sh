@@ -10,4 +10,5 @@ trap 'rm -rf "$stage"' EXIT
 
 GOOS=darwin GOARCH=arm64 go build -o "$stage/sonos-alfred" .
 rm -f "$out"
-(cd "$stage" && zip -q "$out" sonos-alfred)
+cp workflow/info.plist "$stage/"
+(cd "$stage" && zip -q "$out" sonos-alfred info.plist)

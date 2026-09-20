@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"debug/macho"
+	"encoding/json"
 	"io"
 	"os/exec"
 	"path/filepath"
@@ -62,5 +63,57 @@ func TestPackageHoldsAnExecutableArm64Binary(t *testing.T) {
 	}
 	if parsed.Cpu != macho.CpuArm64 {
 		t.Errorf("cpu = %v, want arm64", parsed.Cpu)
+	}
+}
+
+// info is the part of info.plist these tests look at.
+type info struct {
+	Objects []struct {
+		Type   string         `json:"type"`
+		Config map[string]any `json:"config"`
+	} `json:"objects"`
+}
+
+func (i info) config(t *testing.T, objectType string) map[string]any {
+	t.Helper()
+	for _, object := range i.Objects {
+		if object.Type == objectType {
+			return object.Config
+		}
+	}
+	t.Fatalf("info.plist has no %s", objectType)
+	return nil
+}
+
+// readInfo reads the archive's info.plist through plutil, which turns any plist format into JSON.
+func readInfo(t *testing.T, archive *zip.ReadCloser) info {
+	t.Helper()
+	convert := exec.Command("plutil", "-convert", "json", "-o", "-", "-")
+	convert.Stdin = bytes.NewReader(contents(t, file(t, archive, "info.plist")))
+	converted, err := convert.Output()
+	if err != nil {
+		t.Fatalf("info.plist is not a valid plist: %v", err)
+	}
+	var parsed info
+	if err := json.Unmarshal(converted, &parsed); err != nil {
+		t.Fatal(err)
+	}
+	return parsed
+}
+
+func TestScriptFilterOnSonRunsFilterWithTheQueryAndLeavesFilteringToTheBinary(t *testing.T) {
+	filter := readInfo(t, packageWorkflow(t)).config(t, "alfred.workflow.input.scriptfilter")
+
+	want := map[string]any{
+		"keyword":              "son",
+		"type":                 11.0, // an inline script rather than a script file
+		"script":               `./sonos-alfred filter "$1"`,
+		"scriptargtype":        1.0, // the query arrives as $1
+		"alfredfiltersresults": false,
+	}
+	for key, wanted := range want {
+		if filter[key] != wanted {
+			t.Errorf("%s = %v, want %v", key, filter[key], wanted)
+		}
 	}
 }
