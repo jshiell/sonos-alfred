@@ -8,8 +8,8 @@ import (
 	"sonos-alfred/state"
 )
 
-// Refresh reads the household from the speakers and writes it to the cache. It does nothing when another
-// refresh is already running.
+// Refresh reads the household from the speakers and writes it to the cache. When the speakers can't be read it
+// writes that instead, so filter can say so. It does nothing when another refresh is already running.
 func Refresh(ctx context.Context, env Env) error {
 	release, acquired := state.NewRefreshLock(env.Dir, env.Now, lockStaleAfter).TryAcquire()
 	if !acquired {
@@ -19,7 +19,7 @@ func Refresh(ctx context.Context, env Env) error {
 
 	current, err := readHousehold(ctx, env)
 	if err != nil {
-		return err
+		current = hub.State{Unreachable: true}
 	}
 	return state.NewCache(env.Dir, env.Now).Write(StateEntry, current)
 }

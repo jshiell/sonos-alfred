@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"testing"
@@ -78,5 +79,22 @@ func TestRefreshWritesTheStateOfTheActiveGroupToTheCache(t *testing.T) {
 	}
 	if got.Cold || got.Unreachable {
 		t.Errorf("state is marked cold=%v unreachable=%v, want neither", got.Cold, got.Unreachable)
+	}
+}
+
+func TestRefreshRecordsUnreachableWhenNoSpeakerIsFound(t *testing.T) {
+	w := newWorkflow(t)
+	w.env.Discover = func(context.Context) (string, error) { return "", errors.New("no speakers answered") }
+
+	if err := app.Refresh(context.Background(), w.env); err != nil {
+		t.Fatalf("Refresh = %v, want the outcome recorded and no error", err)
+	}
+
+	var got hub.State
+	if !w.cache.Read(app.StateEntry, time.Minute, &got) {
+		t.Fatal("refresh wrote no state")
+	}
+	if !got.Unreachable {
+		t.Errorf("state = %+v, want Unreachable", got)
 	}
 }
