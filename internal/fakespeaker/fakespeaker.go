@@ -46,6 +46,17 @@ func (s *Speaker) Problems() []string {
 	return append([]string(nil), s.problems...)
 }
 
+// Verify lists everything wrong so far: mismatched requests plus scripted exchanges still waiting to happen.
+func (s *Speaker) Verify() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	problems := append([]string(nil), s.problems...)
+	for _, pending := range s.script {
+		problems = append(problems, fmt.Sprintf("expected request never made: %s %s", pending.Path, pending.SOAPAction))
+	}
+	return problems
+}
+
 func (s *Speaker) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

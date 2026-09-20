@@ -92,3 +92,18 @@ func playExchange() fakespeaker.Exchange {
 		Respond:    fakespeaker.Response{Status: http.StatusOK, Body: playResponse},
 	}
 }
+
+func TestVerifyReportsScriptedExchangesThatNeverHappened(t *testing.T) {
+	speaker := fakespeaker.NewUnchecked(playExchange())
+	defer speaker.Close()
+
+	if got := len(speaker.Verify()); got != 1 {
+		t.Fatalf("before any request: %d problems, want 1 (the pending Play): %v", got, speaker.Verify())
+	}
+
+	post(t, speaker.URL+avTransportPath, playAction, playRequest)
+
+	if problems := speaker.Verify(); len(problems) != 0 {
+		t.Errorf("after the Play request: unexpected problems %v", problems)
+	}
+}
