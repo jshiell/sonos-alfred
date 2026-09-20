@@ -46,3 +46,16 @@ func TestEnqueueAtEndAppendsTheItem(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestEnqueueNextInsertsAfterTheCurrentTrack(t *testing.T) {
+	onQueue := recorded(t, "GetMediaInfo", 3)         // CurrentURI x-rincon-queue:<uuid>#0
+	currentTrack := recorded(t, "GetPositionInfo", 1) // Track 1
+	insertAfterOne := recorded(t, "AddURIToQueue", 2) // EnqueueAsNext=1, DesiredFirstTrackNumberEnqueued=2
+	args := argsOf(t, insertAfterOne.Request)
+	nier := sonos.Item{URI: args[1].Value, Metadata: args[2].Value}
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, onQueue, currentTrack, insertAfterOne)
+
+	if err := sonos.NewClient(speaker.URL).EnqueueNext(context.Background(), nier); err != nil {
+		t.Fatal(err)
+	}
+}

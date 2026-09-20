@@ -64,3 +64,16 @@ func (c *Client) addToQueue(ctx context.Context, item Item, position int, asNext
 		Arg{"EnqueueAsNext", enqueueAsNext})
 	return err
 }
+
+// EnqueueNext inserts item right after the track that is playing. It needs the current queue position
+// because the speaker appends instead when asked to enqueue "as next" without one.
+func (c *Client) EnqueueNext(ctx context.Context, item Item) error {
+	if _, err := c.Call(ctx, AVTransport, "GetMediaInfo", Arg{"InstanceID", "0"}); err != nil {
+		return err
+	}
+	current, err := c.NowPlaying(ctx)
+	if err != nil {
+		return err
+	}
+	return c.addToQueue(ctx, item, current.Track+1, true)
+}
