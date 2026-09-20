@@ -14,3 +14,11 @@ func TestPlaySendsPlayToTheSpeaker(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPauseSendsPauseToTheSpeaker(t *testing.T) {
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, recorded(t, "Pause", 0))
+
+	if err := sonos.NewClient(speaker.URL).Pause(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
