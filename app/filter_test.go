@@ -204,3 +204,22 @@ func TestFilterDoesNotRerunWhenTheRefreshCouldNotBeStarted(t *testing.T) {
 		t.Errorf("rerun = %v with no refresh running, want none", got.Rerun)
 	}
 }
+
+func TestFilterStopsRerunningWhenARefreshNeverFinishes(t *testing.T) {
+	w := newWorkflow(t) // a cold cache that the refresh never fills
+	const enough = 500
+
+	// Alfred runs the filter again only while the previous run asked for a rerun.
+	reruns := 0
+	for runFilter(t, w, "").Rerun != 0 {
+		reruns++
+		if reruns == enough {
+			t.Fatalf("still asking for reruns after %d, want a cap", enough)
+		}
+		w.clock.now = w.clock.now.Add(300 * time.Millisecond)
+	}
+
+	if reruns == 0 {
+		t.Error("never asked for a rerun, want reruns while the refresh could still finish")
+	}
+}
