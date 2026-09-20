@@ -2,6 +2,7 @@ package sonos
 
 import (
 	"context"
+	"strconv"
 	"strings"
 )
 
@@ -31,12 +32,7 @@ func (c *Client) ReplaceAndPlay(ctx context.Context, coordinatorUUID string, ite
 	if _, err := c.Call(ctx, AVTransport, "RemoveAllTracksFromQueue", Arg{"InstanceID", "0"}); err != nil {
 		return err
 	}
-	if _, err := c.Call(ctx, AVTransport, "AddURIToQueue",
-		Arg{"InstanceID", "0"},
-		Arg{"EnqueuedURI", item.URI},
-		Arg{"EnqueuedURIMetaData", item.Metadata},
-		Arg{"DesiredFirstTrackNumberEnqueued", "0"},
-		Arg{"EnqueueAsNext", "0"}); err != nil {
+	if err := c.addToQueue(ctx, item, 0, false); err != nil {
 		return err
 	}
 	if _, err := c.Call(ctx, AVTransport, "SetAVTransportURI",
@@ -46,4 +42,25 @@ func (c *Client) ReplaceAndPlay(ctx context.Context, coordinatorUUID string, ite
 		return err
 	}
 	return c.Play(ctx)
+}
+
+// EnqueueAtEnd appends item to the end of the queue.
+func (c *Client) EnqueueAtEnd(ctx context.Context, item Item) error {
+	return c.addToQueue(ctx, item, 0, false)
+}
+
+// addToQueue enqueues item at position (1-based; 0 means the end). With asNext the speaker inserts it
+// at position; asNext with position 0 still appends, so "play next" must pass a real position.
+func (c *Client) addToQueue(ctx context.Context, item Item, position int, asNext bool) error {
+	enqueueAsNext := "0"
+	if asNext {
+		enqueueAsNext = "1"
+	}
+	_, err := c.Call(ctx, AVTransport, "AddURIToQueue",
+		Arg{"InstanceID", "0"},
+		Arg{"EnqueuedURI", item.URI},
+		Arg{"EnqueuedURIMetaData", item.Metadata},
+		Arg{"DesiredFirstTrackNumberEnqueued", strconv.Itoa(position)},
+		Arg{"EnqueueAsNext", enqueueAsNext})
+	return err
 }

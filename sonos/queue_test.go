@@ -35,3 +35,14 @@ func TestReplaceAndPlayPlaysAStreamDirectlyWithoutTouchingTheQueue(t *testing.T)
 		t.Fatal(err)
 	}
 }
+
+func TestEnqueueAtEndAppendsTheItem(t *testing.T) {
+	appendAlbum := recorded(t, "AddURIToQueue", 1) // EnqueueAsNext=0, DesiredFirstTrackNumberEnqueued=0
+	args := argsOf(t, appendAlbum.Request)
+	nier := sonos.Item{URI: args[1].Value, Metadata: args[2].Value}
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, appendAlbum)
+
+	if err := sonos.NewClient(speaker.URL).EnqueueAtEnd(context.Background(), nier); err != nil {
+		t.Fatal(err)
+	}
+}
