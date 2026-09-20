@@ -75,3 +75,13 @@ func argsOf(t *testing.T, request string) []sonos.Arg {
 		}
 	}
 }
+
+// fixtureFile returns the contents of a file in testdata/.
+func fixtureFile(t *testing.T, name string) string {
+	t.Helper()
+	content, err := os.ReadFile("../testdata/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(content)
+}

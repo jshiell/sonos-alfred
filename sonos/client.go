@@ -18,7 +18,8 @@ type Service struct {
 
 // The services this client talks to.
 var (
-	AVTransport = Service{"/MediaRenderer/AVTransport/Control", "urn:schemas-upnp-org:service:AVTransport:1"}
+	AVTransport       = Service{"/MediaRenderer/AVTransport/Control", "urn:schemas-upnp-org:service:AVTransport:1"}
+	ZoneGroupTopology = Service{"/ZoneGroupTopology/Control", "urn:schemas-upnp-org:service:ZoneGroupTopology:1"}
 )
 
 // Arg is one SOAP argument. Arguments are sent in the order given.
