@@ -92,12 +92,12 @@ Top level: **now-playing row**, volume row, then Favorites, Playlists, Queue, Ro
 - Sleep timer: presets (15/30/60 min, off).
 
 ## Unverified → resolved by spikes before feature work
-1. Local UPnP still works on your speakers/firmware (one community post claims gradual S2 deprecation; unconfirmed).
+1. Local UPnP still works on your speakers/firmware (one community post claims gradual S2 deprecation; unconfirmed). **Resolved by S1: works.**
 2. Whether radio favorites can be enqueued. SoCo imposes no such restriction; reports of fault 800 exist. Record the exact fault.
-3. Whether `SnapshotGroupVolume` must be called explicitly.
+3. Whether `SnapshotGroupVolume` must be called explicitly. **Resolved by S2: not required.**
 4. Stereo-pair and soundbar+sub topology shape on your firmware.
-5. How Alfred surfaces a Run Script failure. The Alfred docs are silent on exit status/stderr.
-6. Whether Go's arm64 output is already ad-hoc signed and runs cleanly from an imported workflow.
+5. How Alfred surfaces a Run Script failure. The Alfred docs are silent on exit status/stderr. **Resolved by S3: stdout feeds the notification; stderr alone is invisible.**
+6. Whether Go's arm64 output is already ad-hoc signed and runs cleanly from an imported workflow. **Resolved by S3: yes.**
 
 ## Spike findings
 
@@ -139,6 +139,31 @@ Run on Dining Room (`192.0.2.29`) with your consent; volume stayed 12–14 and w
 - **Group volume with two members (Dining Room coordinator, Office member; 12/1, group reads 6) — unverified #3 resolved: a snapshot is NOT required.** `SetGroupVolume` and `SetRelativeGroupVolume` work without one: the group value lands on the target and `NewVolume` matches the readback. So **2.6c is dropped**. Caveats: (1) per-member changes are **not a simple ratio** (12/1 → `SetGroupVolume 8` gave 13/3 without a snapshot and 12/4 with one; `-5` gave 6/2, with Office *rising*, which I suspect but have not confirmed is a stale internal snapshot from the previous call); (2) `GetGroupVolume` is not a pure function of member volumes (members restored to 12/1 read group 7, 8, 9, 7 across runs), so a group volume read right after a member change can be stale. Fine for single-room use; treat multi-room group volume as best-effort.
 - **Non-coordinator commands fail:** `GetGroupVolume` sent to Office (a member) returned errorCode **701**. This confirms the "always target the current coordinator" rule.
 - **Still open:** SSDP timing (S1 output not seen).
+
+### S3 — packaging + Alfred behaviour (2026-09-20)
+Imported `dist/S3-spike.alfredworkflow` (arm64 Go binary, inline scripts) and ran every path with the debugger open.
+- **Unverified #6 resolved:** Go's arm64 output is `adhoc, linker-signed` by default and ran from the imported workflow with no extra `codesign` and no prompt reported. **6.1a needs no `codesign` step.**
+- **Script nodes:** inline script `./sonos-alfred filter "$1"` / `./sonos-alfred do "$1"` with plist `type 11` and `scriptargtype 1` works for both Script Filter and Run Script, and the binary is found in the workflow directory. `type 8` (external script, used by the skeleton) is not needed, so unverified #5's plist question is moot.
+- **`mods` work end to end:** ⌘ and ⌥ passed their own `arg` (`ok-cmd`, `ok-alt`) to the Run Script. (Whether the subtitle changes while a modifier is held was not observed.)
+- **Error mechanism (unverified #5 resolved):** the Run Script's **stdout** feeds Post Notification (`text = {query}`, `onlyshowifquerypopulated = true`) and the notification is posted **even if the script exits non-zero**. Empty stdout posts nothing, so success is silent by construction.
+  - stdout text + exit 0 → notification. stdout text + exit 1 → notification (and a debugger `ERROR:` line).
+  - **stderr only + exit 1 → nothing user-visible** (only a debugger `ERROR:` line). So **every failure path in `do` must print its message to stdout**, including panics (recover in `main`).
+  - The `osascript` fallback works but is not needed: dropped.
+- **`{query}` in result text is substituted by Alfred** (an item subtitle written "via {query}" rendered as "via fail-text"). Never put a literal `{query}` in titles or subtitles.
+- **Latency baseline:** with a trivial Go binary, Alfred's "Queuing argument" → "Script finished" took ~30 ms warm (~120 ms for the first run after import). A per-keystroke script has that floor before any real work.
+- Rendering: 5 items rendered with the expected titles/subtitles; ⌘1–⌘5 quick-select hints appear on the right (Alfred's default).
+
+### Phase 1 gate: PASSED (2026-09-20)
+UPnP is alive; no backend change. Adjustments to the phases below, all from the findings above:
+- **2.6c dropped** (snapshot not required).
+- **Favorites:** `r:type=shortcut` favorites (empty `<res>`, Sonos Radio) are **not playable via UPnP as tried and are hidden in v1**; `instantPlay` favorites (Apple Music albums) use the container path 2.8a. 2.8b (stream path) is exercised only with URI-based streams.
+- **2.9b** needs the current track number (`GetPositionInfo`) for "play next"; with no queue position (stream) it falls back to enqueue-at-end.
+- **2.9c** "not enqueueable" typed error is kept, keyed on a SOAP fault on `AddURIToQueue`; the exact fault for a real radio favorite remains unrecorded (no playable one exists here).
+- **2.2b** stereo-pair fixture is synthetic (none in this household).
+- **Playlists (`SQ:`)** are empty here; the section renders only when non-empty.
+- **`do` failure path** prints to stdout (see S3).
+- SSDP timing was never captured by me and is not blocking.
+- Spike code deleted; fixtures and findings are the outputs.
 
 ## Out of scope for v1
 SMAPI search (needs its own spike incl. Apple Music auth), grouping/scenes, line-in/TV, TTS/announcements, Universal Actions, cloud Control API, EQ/alarms, amd64, updates/notarization.
