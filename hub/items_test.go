@@ -344,3 +344,15 @@ func TestRepeatRowFollowsShuffleShowsTheModeAndCyclesOnEnter(t *testing.T) {
 		})
 	}
 }
+
+func TestSleepPresetsFollowRepeatAndSetTheTimerOnEnter(t *testing.T) {
+	items := hub.Items(hub.State{}, "")
+
+	assertRowsInOrder(t, items, "Repeat: off", "Sleep in 15 minutes", "Sleep in 30 minutes", "Sleep in 60 minutes")
+	for minutes, title := range map[string]string{"15": "Sleep in 15 minutes", "30": "Sleep in 30 minutes", "60": "Sleep in 60 minutes"} {
+		row := findItem(t, items, title)
+		if !row.Valid || row.Enter != (hub.Action{Verb: "sleep", Payload: minutes}) {
+			t.Errorf("%s: Enter = %+v (valid %v), want sleep %s", title, row.Enter, row.Valid, minutes)
+		}
+	}
+}

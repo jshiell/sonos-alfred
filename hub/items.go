@@ -51,6 +51,9 @@ func Items(state State, query string) []Item {
 		items = append(items, roomRow(room))
 	}
 	items = append(items, shuffleRow(state.PlayMode), repeatRow(state.PlayMode))
+	for _, minutes := range []int{15, 30, 60} {
+		items = append(items, sleepRow(minutes))
+	}
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)
 	}
@@ -191,4 +194,12 @@ func shuffleRow(mode sonos.PlayMode) Item {
 func repeatRow(mode sonos.PlayMode) Item {
 	setting := map[sonos.Repeat]string{sonos.RepeatOff: "off", sonos.RepeatAll: "all", sonos.RepeatOne: "one"}[mode.Repeat]
 	return Item{Title: "Repeat: " + setting, Valid: true, Enter: Action{Verb: "repeat"}}
+}
+
+func sleepRow(minutes int) Item {
+	return Item{
+		Title: fmt.Sprintf("Sleep in %d minutes", minutes),
+		Valid: true,
+		Enter: Action{Verb: "sleep", Payload: strconv.Itoa(minutes)},
+	}
 }
