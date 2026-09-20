@@ -23,13 +23,15 @@ type workflow struct {
 	clock  *clock
 	cache  *state.Cache
 	spawns int
+	// speakerHost is the one host tests may talk to: the fake speaker. Any other request fails the test.
+	speakerHost string
 }
 
 func newWorkflow(t *testing.T) *workflow {
 	t.Helper()
-	failOnAnyHTTPRequest(t)
 	dir := t.TempDir()
 	w := &workflow{clock: &clock{now: time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)}}
+	w.failOnHTTPRequestsOtherThanToTheSpeaker(t)
 	w.cache = state.NewCache(dir, w.clock.Now)
 	w.env = app.Env{
 		Dir:   dir,
@@ -39,11 +41,14 @@ func newWorkflow(t *testing.T) *workflow {
 	return w
 }
 
-// failOnAnyHTTPRequest makes the test fail if the code under test goes to the network.
-func failOnAnyHTTPRequest(t *testing.T) {
+// failOnHTTPRequestsOtherThanToTheSpeaker makes the test fail if the code under test goes to the network.
+func (w *workflow) failOnHTTPRequestsOtherThanToTheSpeaker(t *testing.T) {
 	t.Helper()
 	original := http.DefaultTransport
 	http.DefaultTransport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		if w.speakerHost != "" && r.URL.Host == w.speakerHost {
+			return original.RoundTrip(r)
+		}
 		t.Errorf("unexpected network request: %s %s", r.Method, r.URL)
 		return nil, http.ErrHandlerTimeout
 	})

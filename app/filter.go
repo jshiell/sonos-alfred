@@ -2,10 +2,12 @@
 package app
 
 import (
+	"context"
 	"time"
 
 	"sonos-alfred/alfredjson"
 	"sonos-alfred/hub"
+	"sonos-alfred/sonos"
 	"sonos-alfred/state"
 )
 
@@ -20,9 +22,11 @@ const lockStaleAfter = 30 * time.Second
 
 // Env is what the commands depend on. Dir is the workflow's data directory.
 type Env struct {
-	Dir   string
-	Now   func() time.Time
-	Spawn func() error // starts a detached refresh
+	Dir      string
+	Now      func() time.Time
+	Spawn    func() error                              // starts a detached refresh
+	Discover func(ctx context.Context) (string, error) // finds the host of any speaker on the network
+	Connect  func(host string) sonos.Backend           // reaches the speaker at host
 }
 
 // Filter renders the rows for a query from the cache alone. It never goes to the network.
