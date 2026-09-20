@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -34,5 +36,23 @@ func TestFilterPrintsTheRowsAsJSONAndExitsZero(t *testing.T) {
 	}
 	if !json.Valid(out.Bytes()) || !strings.Contains(out.String(), "Nightcall") {
 		t.Errorf("stdout = %s, want Script Filter JSON with the now-playing row", out.String())
+	}
+}
+
+func TestFilterThatFailsStillPrintsAnErrorRowAndExitsZero(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "not-a-directory")
+	if err := os.WriteFile(file, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("alfred_workflow_data", filepath.Join(file, "data")) // no directory can be made inside a file
+	var out bytes.Buffer
+
+	exitCode := run([]string{"filter", ""}, &out)
+
+	if exitCode != 0 {
+		t.Errorf("exit code = %d, want 0: Alfred shows nothing for a Script Filter that fails", exitCode)
+	}
+	if !json.Valid(out.Bytes()) || !strings.Contains(out.String(), "Sonos hit a problem") {
+		t.Errorf("stdout = %s, want Script Filter JSON with the problem row", out.String())
 	}
 }
