@@ -1,6 +1,7 @@
 package sonos_test
 
 import (
+	"context"
 	"testing"
 
 	"sonos-alfred/sonos"
@@ -31,5 +32,18 @@ func TestPlayModeEncodesAndDecodesAllSixWireValues(t *testing.T) {
 				t.Errorf("%+v encodes as %q, want %q", tc.want, encoded, tc.wire)
 			}
 		})
+	}
+}
+
+func TestPlayModeReadsTheCurrentModeFromTheSpeaker(t *testing.T) {
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, recorded(t, "GetTransportSettings", 0)) // SHUFFLE
+
+	got, err := sonos.NewClient(speaker.URL).PlayMode(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (sonos.PlayMode{Shuffle: true, Repeat: sonos.RepeatAll}); got != want {
+		t.Errorf("PlayMode = %+v, want %+v", got, want)
 	}
 }

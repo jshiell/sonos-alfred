@@ -1,6 +1,9 @@
 package sonos
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // Repeat is how the queue repeats.
 type Repeat int
@@ -40,3 +43,12 @@ func ParsePlayMode(wire string) (PlayMode, error) {
 
 // String is the wire value.
 func (m PlayMode) String() string { return playModeWire[m] }
+
+// PlayMode reads the group's shuffle and repeat settings.
+func (c *Client) PlayMode(ctx context.Context) (PlayMode, error) {
+	values, err := c.Call(ctx, AVTransport, "GetTransportSettings", Arg{"InstanceID", "0"})
+	if err != nil {
+		return PlayMode{}, err
+	}
+	return ParsePlayMode(values["PlayMode"])
+}
