@@ -171,3 +171,19 @@ func TestFilterDoesNotSpawnASecondRefreshButKeepsRerunningWhileOneIsRunning(t *t
 		t.Error("rerun unset while a refresh is running, want it set")
 	}
 }
+
+func TestFilterShowsCantReachSonosWhenTheLastRefreshFoundNoSpeaker(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, hub.State{Unreachable: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	got := runFilter(t, w, "")
+
+	if titles := got.titles(); len(titles) != 1 || titles[0] != "Can't reach Sonos" {
+		t.Errorf("titles = %v, want only Can't reach Sonos", titles)
+	}
+	if w.spawns != 0 {
+		t.Errorf("spawned %d refreshes right after one failed, want 0", w.spawns)
+	}
+}
