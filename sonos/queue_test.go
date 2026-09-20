@@ -85,3 +85,16 @@ func TestEnqueueReportsItemsTheSpeakerRefusesAsNotEnqueueable(t *testing.T) {
 		t.Errorf("error = %v, want sonos.ErrNotEnqueueable", err)
 	}
 }
+
+func TestJumpToQueueTrackSwitchesToTheQueueBeforeSeeking(t *testing.T) {
+	// Recorded while playing a stream: a bare Seek fails (701), so the queue must be selected first.
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN,
+		recorded(t, "SetAVTransportURI", 2), // x-rincon-queue:<uuid>#0
+		recorded(t, "Seek", 1),              // TRACK_NR 3
+		recorded(t, "Play", 2),
+	)
+
+	if err := sonos.NewClient(speaker.URL).JumpToQueueTrack(context.Background(), diningRoomUUID, 3); err != nil {
+		t.Fatal(err)
+	}
+}

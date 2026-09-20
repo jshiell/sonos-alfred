@@ -94,3 +94,19 @@ func (c *Client) EnqueueNext(ctx context.Context, item Item) error {
 	}
 	return c.addToQueue(ctx, item, current.Track+1, true)
 }
+
+// JumpToQueueTrack plays the queue from the given 1-based track. It selects the queue first because a
+// bare Seek fails when the group is playing a stream.
+func (c *Client) JumpToQueueTrack(ctx context.Context, coordinatorUUID string, track int) error {
+	if _, err := c.Call(ctx, AVTransport, "SetAVTransportURI",
+		Arg{"InstanceID", "0"},
+		Arg{"CurrentURI", "x-rincon-queue:" + coordinatorUUID + "#0"},
+		Arg{"CurrentURIMetaData", ""}); err != nil {
+		return err
+	}
+	if _, err := c.Call(ctx, AVTransport, "Seek",
+		Arg{"InstanceID", "0"}, Arg{"Unit", "TRACK_NR"}, Arg{"Target", strconv.Itoa(track)}); err != nil {
+		return err
+	}
+	return c.Play(ctx)
+}
