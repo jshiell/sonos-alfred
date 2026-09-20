@@ -14,6 +14,8 @@ import (
 
 // State is everything the hub knows, read from the cache.
 type State struct {
+	// Cold means nothing has been cached yet: the first run, before a refresh has finished.
+	Cold       bool
 	NowPlaying sonos.NowPlaying
 	Volume     int
 	Favorites  []sonos.Item
@@ -41,6 +43,9 @@ type Item struct {
 
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
+	if state.Cold {
+		return []Item{{Title: "Loading Sonos…"}}
+	}
 	items := matching(allRows(state), query)
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)

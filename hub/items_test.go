@@ -410,3 +410,15 @@ func TestQueryMatchesLettersInOrderNotNecessarilyAdjacent(t *testing.T) {
 		})
 	}
 }
+
+func TestColdCacheShowsOnlyALoadingRowWhateverIsTyped(t *testing.T) {
+	for _, query := range []string{"", "nier", "vol 35"} {
+		t.Run(query, func(t *testing.T) {
+			items := hub.Items(hub.State{Cold: true}, query)
+
+			if len(items) != 1 || items[0].Title != "Loading Sonos…" || items[0].Valid {
+				t.Errorf("items = %+v, want one invalid 'Loading Sonos…' row", items)
+			}
+		})
+	}
+}
