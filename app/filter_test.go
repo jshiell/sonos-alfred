@@ -115,3 +115,19 @@ func TestFilterRendersAFreshCacheWithoutSpawningARefreshOrRerunning(t *testing.T
 		t.Errorf("rerun = %v for a fresh cache, want none", got.Rerun)
 	}
 }
+
+func TestFilterOnAColdCacheShowsLoadingSpawnsARefreshAndReruns(t *testing.T) {
+	w := newWorkflow(t)
+
+	got := runFilter(t, w, "")
+
+	if titles := got.titles(); len(titles) != 1 || titles[0] != "Loading Sonos…" {
+		t.Errorf("titles = %v, want only Loading Sonos…", titles)
+	}
+	if w.spawns != 1 {
+		t.Errorf("spawned %d refreshes, want 1", w.spawns)
+	}
+	if got.Rerun == 0 {
+		t.Error("rerun unset while a refresh is pending, want it set")
+	}
+}

@@ -22,6 +22,11 @@ type Env struct {
 // Filter renders the rows for a query from the cache alone. It never goes to the network.
 func Filter(env Env, query string) ([]byte, error) {
 	var current hub.State
-	state.NewCache(env.Dir, env.Now).ReadWithAge(StateEntry, &current)
-	return alfredjson.Render(hub.Items(current, query), false)
+	_, found := state.NewCache(env.Dir, env.Now).ReadWithAge(StateEntry, &current)
+	refreshPending := false
+	if !found {
+		current = hub.State{Cold: true}
+		refreshPending = env.Spawn() == nil
+	}
+	return alfredjson.Render(hub.Items(current, query), refreshPending)
 }
