@@ -33,3 +33,19 @@ func TestActionPayloadIsURLEscapedAndSurvivesTheRoundTrip(t *testing.T) {
 		t.Errorf("Decode(%q) = %+v, %v; want %+v", encoded, decoded, err, action)
 	}
 }
+
+func TestDecodeRejectsGarbage(t *testing.T) {
+	for name, encoded := range map[string]string{
+		"empty":            "",
+		"no separator":     "volume",
+		"empty verb":       ":35",
+		"broken escaping":  "volume:%zz",
+		"truncated escape": "volume:100%",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if action, err := hub.Decode(encoded); err == nil {
+				t.Errorf("Decode(%q) = %+v, want an error", encoded, action)
+			}
+		})
+	}
+}

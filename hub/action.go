@@ -2,6 +2,7 @@
 package hub
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 )
@@ -18,7 +19,13 @@ func Encode(a Action) string {
 }
 
 func Decode(encoded string) (Action, error) {
-	verb, escaped, _ := strings.Cut(encoded, ":")
-	payload, _ := url.PathUnescape(escaped)
+	verb, escaped, found := strings.Cut(encoded, ":")
+	if !found || verb == "" {
+		return Action{}, fmt.Errorf("malformed action %q: want verb:payload", encoded)
+	}
+	payload, err := url.PathUnescape(escaped)
+	if err != nil {
+		return Action{}, fmt.Errorf("malformed action %q: %w", encoded, err)
+	}
 	return Action{Verb: verb, Payload: payload}, nil
 }
