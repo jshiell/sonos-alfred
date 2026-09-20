@@ -375,3 +375,20 @@ func TestNoCancelRowWithoutASleepTimer(t *testing.T) {
 		}
 	}
 }
+
+func fullHousehold() hub.State {
+	return hub.State{
+		Volume:    12,
+		Favorites: []sonos.Item{{Title: "Niero:Atlas", URI: "x-rincon-cpcontainer:1"}, {Title: "Marbles", URI: "x-rincon-cpcontainer:2"}},
+		Queue:     queueOf("Saxon", "Quartz"),
+		Topology:  household,
+	}
+}
+
+func TestQueryKeepsOnlyRowsWhoseTitleMatches(t *testing.T) {
+	got := titles(hub.Items(fullHousehold(), "nier"))
+
+	if want := []string{"Niero:Atlas"}; !slices.Equal(got, want) {
+		t.Errorf("titles = %v, want %v", got, want)
+	}
+}

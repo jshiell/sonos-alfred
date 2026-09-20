@@ -41,6 +41,25 @@ type Item struct {
 
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
+	items := matching(allRows(state), query)
+	if setVolume, ok := setVolumeRow(query); ok {
+		items = append([]Item{setVolume}, items...)
+	}
+	return items
+}
+
+// matching keeps the rows a query asks for; an empty query asks for all of them.
+func matching(items []Item, query string) []Item {
+	var kept []Item
+	for _, item := range items {
+		if strings.Contains(strings.ToLower(item.Title), strings.ToLower(query)) {
+			kept = append(kept, item)
+		}
+	}
+	return kept
+}
+
+func allRows(state State) []Item {
 	items := []Item{nowPlayingRow(state.NowPlaying), volumeRow(state.Volume)}
 	for _, playable := range slices.Concat(state.Favorites, state.Playlists) {
 		if playable.URI == "" { // Sonos Radio shortcuts carry nothing the speaker can be told to play
@@ -60,9 +79,6 @@ func Items(state State, query string) []Item {
 	}
 	for _, minutes := range []int{15, 30, 60} {
 		items = append(items, sleepRow(minutes))
-	}
-	if setVolume, ok := setVolumeRow(query); ok {
-		items = append([]Item{setVolume}, items...)
 	}
 	return items
 }
