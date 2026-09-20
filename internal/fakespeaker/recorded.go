@@ -97,3 +97,18 @@ func Browse(t testing.TB, objectID, responseFixture string) Exchange {
 		Respond: Response{Status: http.StatusOK, Body: testdataFile(t, responseFixture)},
 	}
 }
+
+const envelopeStart = `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>`
+
+// AVTransport is an AVTransport action with the given argument XML, answered with an empty response. Use it where no
+// exchange was recorded; the request shape comes from the svrooij AVTransport docs.
+func AVTransport(action, argsXML string) Exchange {
+	const urn = "urn:schemas-upnp-org:service:AVTransport:1"
+	return Exchange{
+		Path:       serviceControlPaths[urn],
+		SOAPAction: `"` + urn + "#" + action + `"`,
+		Body:       envelopeStart + `<u:` + action + ` xmlns:u="` + urn + `">` + argsXML + `</u:` + action + `></s:Body></s:Envelope>`,
+		Respond: Response{Status: http.StatusOK, Body: `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:` +
+			action + `Response xmlns:u="` + urn + `"></u:` + action + `Response></s:Body></s:Envelope>`},
+	}
+}
