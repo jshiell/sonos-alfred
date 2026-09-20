@@ -220,3 +220,22 @@ func TestDoRemembersTheChosenRoomWithoutTouchingASpeaker(t *testing.T) {
 		t.Errorf("active group = %q, want RINCON_KITCHEN", got)
 	}
 }
+
+func TestDoSendsLaterActionsToTheChosenRoomBeforeTheCacheCatchesUp(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil { // still says the Dining Room is the target
+		t.Fatal(err)
+	}
+	hosts := w.speakersAre(t, fakespeaker.AVTransport("Next", "<InstanceID>0</InstanceID>"))
+	if err := app.Do(context.Background(), w.env, "room:RINCON_KITCHEN"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := app.Do(context.Background(), w.env, "next:"); err != nil {
+		t.Fatal(err)
+	}
+
+	if want := []string{"192.0.2.130"}; !slices.Equal(*hosts, want) {
+		t.Errorf("connected to %v, want the Kitchen coordinator %v", *hosts, want)
+	}
+}
