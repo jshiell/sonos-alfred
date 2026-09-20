@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -185,5 +186,16 @@ func TestFilterShowsCantReachSonosWhenTheLastRefreshFoundNoSpeaker(t *testing.T)
 	}
 	if w.spawns != 0 {
 		t.Errorf("spawned %d refreshes right after one failed, want 0", w.spawns)
+	}
+}
+
+func TestFilterDoesNotRerunWhenTheRefreshCouldNotBeStarted(t *testing.T) {
+	w := newWorkflow(t)
+	w.env.Spawn = func() error { return errors.New("no such binary") }
+
+	got := runFilter(t, w, "")
+
+	if got.Rerun != 0 {
+		t.Errorf("rerun = %v with no refresh running, want none", got.Rerun)
 	}
 }
