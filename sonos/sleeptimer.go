@@ -13,3 +13,9 @@ func (c *Client) SetSleepTimer(ctx context.Context, d time.Duration) error {
 	_, err := c.Call(ctx, AVTransport, "ConfigureSleepTimer", Arg{"InstanceID", "0"}, Arg{"NewSleepTimerDuration", formatted})
 	return err
 }
+
+// CancelSleepTimer clears any sleep timer.
+func (c *Client) CancelSleepTimer(ctx context.Context) error {
+	_, err := c.Call(ctx, AVTransport, "ConfigureSleepTimer", Arg{"InstanceID", "0"}, Arg{"NewSleepTimerDuration", ""})
+	return err
+}

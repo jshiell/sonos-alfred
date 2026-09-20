@@ -15,3 +15,11 @@ func TestSetSleepTimerSendsHoursMinutesSeconds(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCancelSleepTimerSendsAnEmptyDuration(t *testing.T) {
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, recorded(t, "ConfigureSleepTimer", 1)) // empty string
+
+	if err := sonos.NewClient(speaker.URL).CancelSleepTimer(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
