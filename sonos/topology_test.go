@@ -71,3 +71,18 @@ func TestTopologyHidesTheInvisiblePartnerOfAStereoPair(t *testing.T) {
 		t.Errorf("Bedroom members = %+v, want only the visible RINCON_AAAAAAAAAAAA01400", bedroom.Members)
 	}
 }
+
+func TestTopologyDoesNotTreatHomeTheatreSatellitesAsRooms(t *testing.T) {
+	topology := topologyFrom(t, "zonegroupstate-home-theatre.xml")
+
+	for _, group := range topology.Groups {
+		if group.Coordinator.Name != "Living Room" {
+			continue
+		}
+		if len(group.Members) != 1 || group.Members[0].Host != "192.0.2.34" {
+			t.Errorf("Living Room members = %+v, want only the soundbar at 192.0.2.34 (not the rears or Sub)", group.Members)
+		}
+		return
+	}
+	t.Fatal("no Living Room group")
+}
