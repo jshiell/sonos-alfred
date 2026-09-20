@@ -19,13 +19,17 @@ type Item struct {
 
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
+	return []Item{nowPlayingRow(state.NowPlaying)}
+}
+
+func nowPlayingRow(track sonos.NowPlaying) Item {
 	next, previous := Action{Verb: "next"}, Action{Verb: "previous"}
-	return []Item{{
-		Title:    state.NowPlaying.Title,
-		Subtitle: state.NowPlaying.Artist + " · " + state.NowPlaying.Album,
-		Valid:    true,
-		Enter:    Action{Verb: "playpause"},
-		Cmd:      &next,
-		Alt:      &previous,
-	}}
+	row := Item{Valid: true, Enter: Action{Verb: "playpause"}, Cmd: &next, Alt: &previous}
+	if track.Title == "" {
+		row.Title = "Nothing playing"
+		return row
+	}
+	row.Title = track.Title
+	row.Subtitle = track.Artist + " · " + track.Album
+	return row
 }

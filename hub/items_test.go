@@ -29,3 +29,14 @@ func TestNowPlayingRowIsFirstAndControlsTransport(t *testing.T) {
 		t.Errorf("Alt = %+v, want previous", row.Alt)
 	}
 }
+
+func TestNowPlayingRowSaysSoWhenNothingIsLoaded(t *testing.T) {
+	items := hub.Items(hub.State{}, "")
+
+	if len(items) == 0 {
+		t.Fatal("no items")
+	}
+	if row := items[0]; row.Title != "Nothing playing" || row.Subtitle != "" {
+		t.Errorf("row = %q / %q, want 'Nothing playing' with no subtitle", row.Title, row.Subtitle)
+	}
+}
