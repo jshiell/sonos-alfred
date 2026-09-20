@@ -53,3 +53,21 @@ func TestTopologyListsGroupsWithTheirCoordinators(t *testing.T) {
 		}
 	}
 }
+
+func TestTopologyHidesTheInvisiblePartnerOfAStereoPair(t *testing.T) {
+	// Synthetic fixture: no stereo pair exists in the household the real fixtures came from.
+	topology := topologyFrom(t, "zonegroupstate-stereo-pair.synthetic.xml")
+
+	var bedroom *sonos.Group
+	for i := range topology.Groups {
+		if topology.Groups[i].Coordinator.Name == "Bedroom" {
+			bedroom = &topology.Groups[i]
+		}
+	}
+	if bedroom == nil {
+		t.Fatal("no Bedroom group")
+	}
+	if len(bedroom.Members) != 1 || bedroom.Members[0].UUID != "RINCON_AAAAAAAAAAAA01400" {
+		t.Errorf("Bedroom members = %+v, want only the visible RINCON_AAAAAAAAAAAA01400", bedroom.Members)
+	}
+}

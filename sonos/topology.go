@@ -38,9 +38,10 @@ func parseTopology(zoneGroupState string) (Topology, error) {
 		Groups []struct {
 			Coordinator string `xml:"Coordinator,attr"`
 			Members     []struct {
-				UUID     string `xml:"UUID,attr"`
-				ZoneName string `xml:"ZoneName,attr"`
-				Location string `xml:"Location,attr"`
+				UUID      string `xml:"UUID,attr"`
+				ZoneName  string `xml:"ZoneName,attr"`
+				Location  string `xml:"Location,attr"`
+				Invisible string `xml:"Invisible,attr"`
 			} `xml:"ZoneGroupMember"`
 		} `xml:"ZoneGroups>ZoneGroup"`
 	}
@@ -52,6 +53,9 @@ func parseTopology(zoneGroupState string) (Topology, error) {
 	for _, parsed := range state.Groups {
 		var group Group
 		for _, m := range parsed.Members {
+			if m.Invisible == "1" {
+				continue
+			}
 			member := Member{UUID: m.UUID, Name: m.ZoneName, Host: hostOf(m.Location)}
 			group.Members = append(group.Members, member)
 			if m.UUID == parsed.Coordinator {
