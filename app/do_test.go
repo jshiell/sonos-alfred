@@ -281,3 +281,15 @@ func TestDoSetsASleepTimerInMinutes(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoCancelsTheSleepTimer(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t, fakespeaker.Recorded(t, "ConfigureSleepTimer", 1)) // empty duration
+
+	if err := app.Do(context.Background(), w.env, "sleep-cancel:"); err != nil {
+		t.Fatal(err)
+	}
+}

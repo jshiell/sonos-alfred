@@ -92,6 +92,8 @@ func Do(ctx context.Context, env Env, encoded string) error {
 			return fmt.Errorf("bad sleep minutes %q", action.Payload)
 		}
 		return speaker.SetSleepTimer(ctx, time.Duration(minutes)*time.Minute)
+	case "sleep-cancel":
+		return speaker.CancelSleepTimer(ctx)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }
