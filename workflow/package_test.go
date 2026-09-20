@@ -131,3 +131,13 @@ func TestChoosingARowRunsDoWithItsAction(t *testing.T) {
 		"scriptargtype": 1.0,
 	})
 }
+
+func TestWhatDoPrintsIsNotifiedOnlyWhenItPrintedSomething(t *testing.T) {
+	notification := readInfo(t, packageWorkflow(t)).config(t, "alfred.workflow.output.notification")
+
+	assertConfig(t, notification, map[string]any{
+		"title":                    "Sonos",
+		"text":                     "{query}",
+		"onlyshowifquerypopulated": true,
+	})
+}
