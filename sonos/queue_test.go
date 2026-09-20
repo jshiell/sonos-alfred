@@ -98,3 +98,29 @@ func TestJumpToQueueTrackSwitchesToTheQueueBeforeSeeking(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPlayingFromQueueTellsTheQueueFromAStream(t *testing.T) {
+	cases := []struct {
+		name string
+		info recordedExchange
+		want bool
+	}{
+		{"queue", recorded(t, "GetMediaInfo", 3), true},   // CurrentURI x-rincon-queue:<uuid>#0
+		{"stream", recorded(t, "GetMediaInfo", 0), false}, // CurrentURI x-rincon-mp3radio://...
+		{"nothing loaded", recorded(t, "GetMediaInfo", 1), false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			speaker := speakerReplaying(t, avTransportPath, avTransportURN, c.info)
+
+			got, err := sonos.NewClient(speaker.URL).PlayingFromQueue(context.Background())
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != c.want {
+				t.Errorf("PlayingFromQueue = %v, want %v", got, c.want)
+			}
+		})
+	}
+}

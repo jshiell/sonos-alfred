@@ -78,11 +78,11 @@ func (c *Client) addToQueue(ctx context.Context, item Item, position int, asNext
 // EnqueueNext inserts item right after the track that is playing. It needs the current queue position
 // because the speaker appends instead when asked to enqueue "as next" without one.
 func (c *Client) EnqueueNext(ctx context.Context, item Item) error {
-	media, err := c.Call(ctx, AVTransport, "GetMediaInfo", Arg{"InstanceID", "0"})
+	fromQueue, err := c.PlayingFromQueue(ctx)
 	if err != nil {
 		return err
 	}
-	if !strings.HasPrefix(media["CurrentURI"], "x-rincon-queue:") {
+	if !fromQueue {
 		return c.EnqueueAtEnd(ctx, item) // not playing from the queue, so there is no "next" position
 	}
 	current, err := c.NowPlaying(ctx)
@@ -90,6 +90,16 @@ func (c *Client) EnqueueNext(ctx context.Context, item Item) error {
 		return err
 	}
 	return c.addToQueue(ctx, item, current.Track+1, true)
+}
+
+// PlayingFromQueue says whether the queue is what the group is playing, as opposed to a stream. A stream reports
+// track 1 too, so the track number alone can't tell.
+func (c *Client) PlayingFromQueue(ctx context.Context) (bool, error) {
+	media, err := c.Call(ctx, AVTransport, "GetMediaInfo", Arg{"InstanceID", "0"})
+	if err != nil {
+		return false, err
+	}
+	return strings.HasPrefix(media["CurrentURI"], "x-rincon-queue:"), nil
 }
 
 // JumpToQueueTrack plays the queue from the given 1-based track. It selects the queue first because a
