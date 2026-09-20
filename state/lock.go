@@ -60,3 +60,8 @@ func (l *RefreshLock) isStale() bool {
 	}
 	return l.now().Sub(acquiredAt) > l.staleAfter
 }
+
+// Held reports whether a refresh is running: the lock exists and is not stale.
+func (l *RefreshLock) Held() bool {
+	return !l.isStale()
+}

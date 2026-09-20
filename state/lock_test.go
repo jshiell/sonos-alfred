@@ -57,3 +57,21 @@ func TestRefreshLockIsStillHeldJustBeforeItGoesStale(t *testing.T) {
 		t.Error("TryAcquire = true for a lock younger than the stale time, want false")
 	}
 }
+
+func TestRefreshLockReportsWhetherSomeoneHoldsIt(t *testing.T) {
+	dir := t.TempDir()
+	clk := newClock()
+	lock := state.NewRefreshLock(dir, clk.Now, lockStaleAfter)
+
+	if lock.Held() {
+		t.Error("Held = true before anyone took it, want false")
+	}
+	release, _ := lock.TryAcquire()
+	if !lock.Held() {
+		t.Error("Held = false while taken, want true")
+	}
+	release()
+	if lock.Held() {
+		t.Error("Held = true after release, want false")
+	}
+}
