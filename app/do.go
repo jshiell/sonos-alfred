@@ -82,11 +82,18 @@ func Do(ctx context.Context, env Env, encoded string) error {
 		}
 		return speaker.JumpToQueueTrack(ctx, group.Coordinator.UUID, track)
 	case "shuffle":
-		mode, err := speaker.PlayMode(ctx)
-		if err != nil {
-			return err
-		}
-		return speaker.SetPlayMode(ctx, mode.ToggleShuffle())
+		return changePlayMode(ctx, speaker, sonos.PlayMode.ToggleShuffle)
+	case "repeat":
+		return changePlayMode(ctx, speaker, sonos.PlayMode.CycleRepeat)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
+}
+
+// changePlayMode applies change to the speaker's live play mode, not the cached one, which may be out of date.
+func changePlayMode(ctx context.Context, speaker sonos.Backend, change func(sonos.PlayMode) sonos.PlayMode) error {
+	mode, err := speaker.PlayMode(ctx)
+	if err != nil {
+		return err
+	}
+	return speaker.SetPlayMode(ctx, change(mode))
 }

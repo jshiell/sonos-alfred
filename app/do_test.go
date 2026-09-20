@@ -254,3 +254,18 @@ func TestDoTurnsShuffleOnFromTheLiveSetting(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoCyclesRepeatFromTheLiveSettingAndKeepsShuffle(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t,
+		fakespeaker.Recorded(t, "GetTransportSettings", 1), // SHUFFLE_NOREPEAT
+		fakespeaker.Recorded(t, "SetPlayMode", 0),          // SHUFFLE: shuffle with repeat all
+	)
+
+	if err := app.Do(context.Background(), w.env, "repeat:"); err != nil {
+		t.Fatal(err)
+	}
+}
