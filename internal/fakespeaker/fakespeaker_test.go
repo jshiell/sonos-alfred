@@ -50,3 +50,45 @@ func TestReplaysScriptedResponseForMatchingRequest(t *testing.T) {
 		t.Errorf("unexpected problems: %v", problems)
 	}
 }
+
+func TestRejectsRequestsThatDoNotMatchTheScript(t *testing.T) {
+	const pauseAction = `"urn:schemas-upnp-org:service:AVTransport:1#Pause"`
+	speedThenInstance := strings.Replace(playRequest, "<InstanceID>0</InstanceID><Speed>1</Speed>", "<Speed>1</Speed><InstanceID>0</InstanceID>", 1)
+	cases := []struct {
+		name       string
+		script     []fakespeaker.Exchange
+		path       string
+		soapAction string
+		body       string
+	}{
+		{"wrong path", []fakespeaker.Exchange{playExchange()}, "/MediaRenderer/RenderingControl/Control", playAction, playRequest},
+		{"wrong action", []fakespeaker.Exchange{playExchange()}, avTransportPath, pauseAction, playRequest},
+		{"wrong argument value", []fakespeaker.Exchange{playExchange()}, avTransportPath, playAction, strings.Replace(playRequest, "<Speed>1</Speed>", "<Speed>2</Speed>", 1)},
+		{"arguments in the wrong order", []fakespeaker.Exchange{playExchange()}, avTransportPath, playAction, speedThenInstance},
+		{"call after the script is exhausted", nil, avTransportPath, playAction, playRequest},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			speaker := fakespeaker.NewUnchecked(tc.script...)
+			defer speaker.Close()
+
+			status, _ := post(t, speaker.URL+tc.path, tc.soapAction, tc.body)
+
+			if status != http.StatusInternalServerError {
+				t.Errorf("status = %d, want 500", status)
+			}
+			if got := len(speaker.Problems()); got != 1 {
+				t.Errorf("recorded %d problems, want 1: %v", got, speaker.Problems())
+			}
+		})
+	}
+}
+
+func playExchange() fakespeaker.Exchange {
+	return fakespeaker.Exchange{
+		Path:       avTransportPath,
+		SOAPAction: playAction,
+		Body:       playRequest,
+		Respond:    fakespeaker.Response{Status: http.StatusOK, Body: playResponse},
+	}
+}

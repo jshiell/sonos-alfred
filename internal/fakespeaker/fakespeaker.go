@@ -3,6 +3,7 @@ package fakespeaker
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -48,8 +49,37 @@ func (s *Speaker) Problems() []string {
 func (s *Speaker) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	body, _ := io.ReadAll(r.Body)
+	got := Exchange{Path: r.URL.Path, SOAPAction: r.Header.Get("SOAPACTION"), Body: string(body)}
+
+	if len(s.script) == 0 {
+		s.reject(w, fmt.Sprintf("unexpected request after the script was exhausted: %s %s", got.Path, got.SOAPAction))
+		return
+	}
 	next := s.script[0]
+	if problem := mismatch(next, got); problem != "" {
+		s.reject(w, problem)
+		return
+	}
 	s.script = s.script[1:]
 	w.WriteHeader(next.Respond.Status)
 	fmt.Fprint(w, next.Respond.Body)
+}
+
+func (s *Speaker) reject(w http.ResponseWriter, problem string) {
+	s.problems = append(s.problems, problem)
+	w.WriteHeader(http.StatusInternalServerError)
+}
+
+func mismatch(want, got Exchange) string {
+	switch {
+	case want.Path != got.Path:
+		return fmt.Sprintf("path: got %q, want %q", got.Path, want.Path)
+	case want.SOAPAction != got.SOAPAction:
+		return fmt.Sprintf("SOAPACTION: got %s, want %s", got.SOAPAction, want.SOAPAction)
+	case want.Body != got.Body:
+		return fmt.Sprintf("body differs:\n got: %s\nwant: %s", got.Body, want.Body)
+	}
+	return ""
 }
