@@ -422,3 +422,19 @@ func TestColdCacheShowsOnlyALoadingRowWhateverIsTyped(t *testing.T) {
 		})
 	}
 }
+
+func TestUnreachableSonosShowsOnlyThatWhetherOrNotThereIsCachedData(t *testing.T) {
+	warm := fullHousehold()
+	warm.Unreachable = true
+	cold := hub.State{Cold: true, Unreachable: true}
+
+	for name, state := range map[string]hub.State{"warm cache": warm, "cold cache": cold} {
+		t.Run(name, func(t *testing.T) {
+			items := hub.Items(state, "")
+
+			if len(items) != 1 || items[0].Title != "Can't reach Sonos" || items[0].Valid || items[0].Subtitle == "" {
+				t.Errorf("items = %+v, want one invalid 'Can't reach Sonos' row with a hint", items)
+			}
+		})
+	}
+}
