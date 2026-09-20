@@ -113,6 +113,20 @@ Top level: **now-playing row**, volume row, then Favorites, Playlists, Queue, Ro
 - Fixture: `testdata/zonegroupstate-home-theatre.xml` (real, from the soundbar). It contains MAC-derived UUIDs and private IPs.
 - SSDP timing not yet recorded (S1 output not seen by me).
 
+### S2 (read-only part) — Browse (2026-09-20)
+Nothing was played or changed; live playback/enqueue/volume tests still need your go-ahead (see "Open decisions").
+- `Browse` works for `FV:2`, `SQ:` and `Q:0` (~50 ms each; the first `FV:2` call took 4.1 s, so favorites refresh must stay in the background).
+- **Favorites: only 2, both Sonos Radio "shortcuts" with an EMPTY `<res>`** (`<r:type>shortcut</r:type>`; "Discover Sonos Radio", "Trending Now"). Their playable identity is only in `r:resMD` (an `object.container` whose `<desc>` token `SA_RINCON77575_X_#Svc77575-0-Token` implies Sonos Radio, service id 303 = (77575-7)/256). **The plan's "play the `<res>` URI with `r:resMD`" does not apply to these.** How to play one is unknown until a live test. Do not assume a `x-sonosapi-radio:` URI form.
+- **Playlists (`SQ:`): empty.** Apple Music playlists are not Sonos playlists, so the Playlists section would be empty for this household.
+- **Queue (`Q:0`): 46 Apple Music tracks** (`x-sonos-http:song%3a…?sid=204&flags=8232&sn=5`). Queue rendering and queue jump are testable as planned.
+- `resMD` is double-escaped inside `Browse`'s `Result`, as expected; the `Trending Now` `resMD` has an empty `dc:title` and an `id`/`parentID` that differ in case, so favorite titles must come from the outer item, not `resMD`.
+- Fixtures: `testdata/browse-favorites-sonos-radio-shortcuts.xml`, `browse-playlists-empty.xml`, `browse-queue-apple-music.xml` (the queue fixture contains your listening history).
+
+### Open decisions from the spikes
+1. Favorites/Playlists are nearly empty on this household. Add real favorites (an Apple Music album/playlist, a radio station), spike playing the existing shortcuts, or rescope v1?
+2. Live S2 tests need consent: which room may play audibly, and at what volume ceiling?
+3. Group-volume snapshot test needs two rooms grouped by you in the Sonos app (all 6 groups are single-member now).
+
 ## Out of scope for v1
 SMAPI search (needs its own spike incl. Apple Music auth), grouping/scenes, line-in/TV, TTS/announcements, Universal Actions, cloud Control API, EQ/alarms, amd64, updates/notarization.
 
