@@ -14,6 +14,7 @@ type Backend interface {
 	Play(ctx context.Context) error
 	Pause(ctx context.Context) error
 	EnqueueAtEnd(ctx context.Context, item Item) error
+	EnqueueNext(ctx context.Context, item Item) error
 	ReplaceAndPlay(ctx context.Context, coordinatorUUID string, item Item) error
 	Next(ctx context.Context) error
 	Previous(ctx context.Context) error

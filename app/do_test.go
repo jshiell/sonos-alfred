@@ -172,3 +172,22 @@ func TestDoAddsAFavoriteToTheEndOfTheQueue(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDoPlaysAFavoriteNextAfterTheCurrentTrack(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t,
+		fakespeaker.Recorded(t, "GetMediaInfo", 3),    // playing from the queue
+		fakespeaker.Recorded(t, "GetPositionInfo", 1), // at track 1
+		fakespeaker.AVTransport("AddURIToQueue",
+			"<InstanceID>0</InstanceID><EnqueuedURI>x-file-cifs://nas/album</EnqueuedURI><EnqueuedURIMetaData></EnqueuedURIMetaData>"+
+				"<DesiredFirstTrackNumberEnqueued>2</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext>"),
+	)
+	alt := hub.Encode(*rowTitled(t, rowsFor(nasAlbum), "Album").Alt)
+
+	if err := app.Do(context.Background(), w.env, alt); err != nil {
+		t.Fatal(err)
+	}
+}
