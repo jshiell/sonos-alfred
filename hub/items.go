@@ -3,6 +3,7 @@ package hub
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,7 @@ type State struct {
 	NowPlaying sonos.NowPlaying
 	Volume     int
 	Favorites  []sonos.Item
+	Playlists  []sonos.Item
 }
 
 // Item is one row Alfred shows. Enter, Cmd and Alt are what happens on Enter, ⌘-Enter and ⌥-Enter.
@@ -29,11 +31,11 @@ type Item struct {
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
 	items := []Item{nowPlayingRow(state.NowPlaying), volumeRow(state.Volume)}
-	for _, favorite := range state.Favorites {
-		if favorite.URI == "" { // Sonos Radio shortcuts carry nothing the speaker can be told to play
+	for _, playable := range slices.Concat(state.Favorites, state.Playlists) {
+		if playable.URI == "" { // Sonos Radio shortcuts carry nothing the speaker can be told to play
 			continue
 		}
-		items = append(items, playableRow(favorite))
+		items = append(items, playableRow(playable))
 	}
 	if setVolume, ok := setVolumeRow(query); ok {
 		items = append([]Item{setVolume}, items...)

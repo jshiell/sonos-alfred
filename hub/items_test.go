@@ -182,3 +182,22 @@ func TestFavoritesWithNothingToPlayAreHidden(t *testing.T) {
 	}
 	findItem(t, hub.Items(hub.State{Favorites: []sonos.Item{radioShortcut, album}}, ""), "Niero:Atlas")
 }
+
+func TestPlaylistsFollowFavoritesWithTheSameActions(t *testing.T) {
+	album := sonos.Item{Title: "Niero:Atlas", URI: "x-rincon-cpcontainer:1004206c"}
+	playlist := sonos.Item{ID: "SQ:1", Title: "Focus", URI: "file:///jffs/settings/savedqueues.rsq#1", Metadata: "<DIDL-Lite/>"}
+
+	items := hub.Items(hub.State{Favorites: []sonos.Item{album}, Playlists: []sonos.Item{playlist}}, "")
+
+	got := titles(items)
+	if len(got) < 2 || got[len(got)-2] != "Niero:Atlas" || got[len(got)-1] != "Focus" {
+		t.Errorf("titles = %v, want the favorite then the playlist last", got)
+	}
+	row := findItem(t, items, "Focus")
+	assertItemAction(t, "Enter", row.Enter, "play-item", playlist)
+	if row.Cmd == nil || row.Alt == nil {
+		t.Fatalf("Cmd = %v, Alt = %v, want both", row.Cmd, row.Alt)
+	}
+	assertItemAction(t, "Cmd", *row.Cmd, "add-item", playlist)
+	assertItemAction(t, "Alt", *row.Alt, "play-next-item", playlist)
+}
