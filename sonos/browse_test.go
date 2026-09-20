@@ -68,3 +68,23 @@ func TestPlaylistsIsEmptyWhenTheHouseholdHasNoSonosPlaylists(t *testing.T) {
 		t.Errorf("got %d playlists, want none: %+v", len(playlists), playlists)
 	}
 }
+
+func TestQueueListsTracksInOrder(t *testing.T) {
+	speaker := contentDirectorySpeaker(t, "Q:0", "browse-queue-apple-music.xml")
+
+	queue, err := sonos.NewClient(speaker.URL).Queue(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queue) != 46 {
+		t.Fatalf("got %d tracks, want 46", len(queue))
+	}
+	first := queue[0]
+	if first.ID != "Q:0/1" || first.Title != "Sample Track 01 - O’Brien" {
+		t.Errorf("first track = %q %q, want Q:0/1 %q", first.ID, first.Title, "Sample Track 01 - O’Brien")
+	}
+	if want := "x-sonos-http:song%3a9000000002.mp4?sid=204&flags=8232&sn=5"; first.URI != want {
+		t.Errorf("first track URI = %q, want %q", first.URI, want)
+	}
+}

@@ -55,3 +55,8 @@ func parseDIDL(didl string) ([]Item, error) {
 func (c *Client) Playlists(ctx context.Context) ([]Item, error) {
 	return c.browse(ctx, "SQ:")
 }
+
+// Queue lists the tracks in the group's queue, in play order.
+func (c *Client) Queue(ctx context.Context) ([]Item, error) {
+	return c.browse(ctx, "Q:0")
+}
