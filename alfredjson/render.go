@@ -8,8 +8,12 @@ import (
 )
 
 type response struct {
-	Items []item `json:"items"`
+	Rerun float64 `json:"rerun,omitempty"`
+	Items []item  `json:"items"`
 }
+
+// rerunSeconds is how soon Alfred runs the filter again while a refresh is pending.
+const rerunSeconds = 0.3
 
 type item struct {
 	Title    string         `json:"title"`
@@ -27,6 +31,9 @@ type mod struct {
 // Render is the Script Filter JSON for items. refreshPending asks Alfred to run the filter again shortly.
 func Render(items []hub.Item, refreshPending bool) ([]byte, error) {
 	var out response
+	if refreshPending {
+		out.Rerun = rerunSeconds
+	}
 	for _, row := range items {
 		if !row.Valid {
 			out.Items = append(out.Items, item{Title: row.Title, Subtitle: row.Subtitle})

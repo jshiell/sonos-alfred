@@ -66,3 +66,12 @@ func TestRenderGivesRowsThatCannotBeActedOnNoArgAndNoMods(t *testing.T) {
 	}
 	assertJSON(t, got, `{"items":[{"title": "Can't reach Sonos", "subtitle": "Check the speakers", "valid": false}]}`)
 }
+
+func TestRenderAsksAlfredToRunAgainWhileARefreshIsPending(t *testing.T) {
+	got, err := alfredjson.Render([]hub.Item{{Title: "Loading Sonos…"}}, true)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertJSON(t, got, `{"rerun": 0.3, "items":[{"title": "Loading Sonos…", "valid": false}]}`)
+}
