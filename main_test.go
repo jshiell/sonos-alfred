@@ -87,3 +87,22 @@ func TestAnUnknownCommandIsReportedOnStdoutAndExitsNonZero(t *testing.T) {
 		t.Errorf("stdout = %q, want it to name the unknown command", stdout)
 	}
 }
+
+func TestAPanicInFilterIsReportedAsARowAndExitsZero(t *testing.T) {
+	original := newEnv
+	t.Cleanup(func() { newEnv = original })
+	newEnv = func() (app.Env, error) {
+		// A cold cache makes filter start a refresh, which is where this env blows up.
+		return app.Env{Dir: t.TempDir(), Now: time.Now, Spawn: func() error { panic("boom") }}, nil
+	}
+	var out bytes.Buffer
+
+	exitCode := run([]string{"filter", ""}, &out)
+
+	if exitCode != 0 {
+		t.Errorf("exit code = %d, want 0", exitCode)
+	}
+	if !json.Valid(out.Bytes()) || !strings.Contains(out.String(), "boom") {
+		t.Errorf("stdout = %s, want Script Filter JSON that says what went wrong", out.String())
+	}
+}

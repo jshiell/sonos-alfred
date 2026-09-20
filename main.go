@@ -87,7 +87,10 @@ func fail(command string, stdout io.Writer, err error) int {
 	return 1
 }
 
-func newEnv() (app.Env, error) {
+// newEnv builds what the commands run with. It is a variable so that tests can supply their own.
+var newEnv = workflowEnv
+
+func workflowEnv() (app.Env, error) {
 	dir, err := dataDir()
 	if err != nil {
 		return app.Env{}, err
