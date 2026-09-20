@@ -155,3 +155,20 @@ func TestDoPlaysAFavoriteStreamDirectly(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+var nasAlbum = sonos.Item{Title: "Album", URI: "x-file-cifs://nas/album"}
+
+func TestDoAddsAFavoriteToTheEndOfTheQueue(t *testing.T) {
+	w := newWorkflow(t)
+	if err := w.cache.Write(app.StateEntry, diningRoomAndKitchen()); err != nil {
+		t.Fatal(err)
+	}
+	w.speakersAre(t, fakespeaker.AVTransport("AddURIToQueue",
+		"<InstanceID>0</InstanceID><EnqueuedURI>x-file-cifs://nas/album</EnqueuedURI><EnqueuedURIMetaData></EnqueuedURIMetaData>"+
+			"<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext>"))
+	cmd := hub.Encode(*rowTitled(t, rowsFor(nasAlbum), "Album").Cmd)
+
+	if err := app.Do(context.Background(), w.env, cmd); err != nil {
+		t.Fatal(err)
+	}
+}

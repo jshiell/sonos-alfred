@@ -60,6 +60,12 @@ func Do(ctx context.Context, env Env, encoded string) error {
 			return err
 		}
 		return speaker.ReplaceAndPlay(ctx, group.Coordinator.UUID, item)
+	case "add-item":
+		item, err := hub.ParseItemPayload(action.Payload)
+		if err != nil {
+			return err
+		}
+		return speaker.EnqueueAtEnd(ctx, item)
 	}
 	return fmt.Errorf("unknown action %q", action.Verb)
 }
