@@ -54,3 +54,16 @@ func TestPreviousSendsPreviousToTheSpeaker(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTransportStateReportsPlaying(t *testing.T) {
+	speaker := speakerReplaying(t, avTransportPath, avTransportURN, recorded(t, "GetTransportInfo", 0))
+
+	state, err := sonos.NewClient(speaker.URL).TransportState(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state != sonos.StatePlaying {
+		t.Errorf("state = %q, want %q", state, sonos.StatePlaying)
+	}
+}

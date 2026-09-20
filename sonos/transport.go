@@ -25,3 +25,18 @@ func (c *Client) Previous(ctx context.Context) error {
 	_, err := c.Call(ctx, AVTransport, "Previous", Arg{"InstanceID", "0"})
 	return err
 }
+
+// TransportState is what a group is currently doing.
+type TransportState string
+
+// StatePlaying is reported while audio is playing.
+const StatePlaying TransportState = "PLAYING"
+
+// TransportState reads whether the group is playing, paused or stopped.
+func (c *Client) TransportState(ctx context.Context) (TransportState, error) {
+	values, err := c.Call(ctx, AVTransport, "GetTransportInfo", Arg{"InstanceID", "0"})
+	if err != nil {
+		return "", err
+	}
+	return TransportState(values["CurrentTransportState"]), nil
+}
