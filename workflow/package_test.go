@@ -8,6 +8,7 @@ import (
 	"io"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -64,6 +65,18 @@ func TestPackageHoldsAnExecutableArm64Binary(t *testing.T) {
 	}
 	if parsed.Cpu != macho.CpuArm64 {
 		t.Errorf("cpu = %v, want arm64", parsed.Cpu)
+	}
+}
+
+func TestPackageHoldsTheBinaryAndTheWorkflowDefinitionAndNothingElse(t *testing.T) {
+	var names []string
+	for _, f := range packageWorkflow(t).File {
+		names = append(names, f.Name)
+	}
+
+	slices.Sort(names)
+	if want := []string{"info.plist", "sonos-alfred"}; !slices.Equal(names, want) {
+		t.Errorf("archive holds %v, want %v", names, want)
 	}
 }
 
