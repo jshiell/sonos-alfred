@@ -34,6 +34,17 @@ func TestNowPlayingRowIsFirstAndControlsTransport(t *testing.T) {
 	}
 }
 
+func TestNowPlayingRowSaysWhatCmdAndAltDoWhileTheyAreHeld(t *testing.T) {
+	row := hub.Items(hub.State{NowPlaying: sonos.NowPlaying{Title: "Saxon", Artist: "Marbles"}}, "")[0]
+
+	if row.CmdSubtitle != "Next track" || row.AltSubtitle != "Previous track" {
+		t.Errorf("held subtitles = %q / %q, want 'Next track' / 'Previous track'", row.CmdSubtitle, row.AltSubtitle)
+	}
+	if row.Subtitle != "Marbles" {
+		t.Errorf("subtitle = %q, want the artist and album left alone", row.Subtitle)
+	}
+}
+
 func TestNowPlayingRowSaysSoWhenNothingIsLoaded(t *testing.T) {
 	items := hub.Items(hub.State{}, "")
 

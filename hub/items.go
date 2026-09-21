@@ -43,6 +43,9 @@ type Item struct {
 	Enter    Action
 	Cmd      *Action
 	Alt      *Action
+	// CmdSubtitle and AltSubtitle replace Subtitle while ⌘ or ⌥ is held.
+	CmdSubtitle string
+	AltSubtitle string
 }
 
 // Items returns the rows for a query, in display order.
@@ -126,7 +129,11 @@ func setVolumeRow(query string) (Item, bool) {
 
 func nowPlayingRow(track sonos.NowPlaying) Item {
 	next, previous := Action{Verb: "next"}, Action{Verb: "previous"}
-	row := Item{Valid: true, Enter: Action{Verb: "playpause"}, Cmd: &next, Alt: &previous}
+	row := Item{
+		Valid: true, Enter: Action{Verb: "playpause"},
+		Cmd: &next, Alt: &previous,
+		CmdSubtitle: "Next track", AltSubtitle: "Previous track",
+	}
 	if track.Title == "" {
 		row.Title = "Nothing playing"
 		if track.Track > 0 { // a track is loaded but says nothing about itself
