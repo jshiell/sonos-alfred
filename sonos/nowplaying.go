@@ -3,6 +3,8 @@ package sonos
 import (
 	"context"
 	"encoding/xml"
+	"errors"
+	"io"
 	"strconv"
 )
 
@@ -30,7 +32,11 @@ func (c *Client) NowPlaying(ctx context.Context) (NowPlaying, error) {
 		Artist string `xml:"item>creator"`
 		Album  string `xml:"item>album"`
 	}
-	if err := xml.Unmarshal([]byte(values["TrackMetaData"]), &didl); err != nil {
+	err = xml.Unmarshal([]byte(values["TrackMetaData"]), &didl)
+	if errors.Is(err, io.EOF) { // no XML at all, like the NOT_IMPLEMENTED that AirPlay reports
+		return NowPlaying{Track: track}, nil
+	}
+	if err != nil {
 		return NowPlaying{}, err
 	}
 	return NowPlaying{Track: track, Title: didl.Title, Artist: didl.Artist, Album: didl.Album}, nil
