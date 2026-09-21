@@ -93,7 +93,8 @@ func allRows(state State) []Item {
 	for _, room := range roomsByName(state.Topology, state.Target) {
 		items = append(items, roomRow(room))
 	}
-	if state.NowPlaying.Track == 0 { // a loaded track that isn't from the queue is a stream, which refuses play modes
+	streaming := state.NowPlaying.Track > 0 && !state.PlayingFromQueue // a stream refuses play modes
+	if !streaming {
 		items = append(items, shuffleRow(state.PlayMode), repeatRow(state.PlayMode))
 	}
 	if state.SleepRemaining > 0 {

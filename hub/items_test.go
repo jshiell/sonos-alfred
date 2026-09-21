@@ -388,6 +388,16 @@ func TestShuffleAndRepeatRowsAreHiddenWhileAStreamPlays(t *testing.T) {
 	}
 }
 
+func TestShuffleAndRepeatRowsAreShownWhilePlayingFromTheQueue(t *testing.T) {
+	state := hub.State{
+		NowPlaying:       sonos.NowPlaying{Track: 2, Title: "Quartz"},
+		PlayingFromQueue: true,
+		Queue:            queueOf("Saxon", "Quartz"),
+	}
+
+	assertRowsInOrder(t, hub.Items(state, ""), "Shuffle: off", "Repeat: off")
+}
+
 func TestSleepPresetsFollowRepeatAndSetTheTimerOnEnter(t *testing.T) {
 	items := hub.Items(hub.State{}, "")
 
