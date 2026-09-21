@@ -16,6 +16,7 @@
     },
     {
       "title": "Niero:Atlas",
+      "subtitle": "↩ play · ⌘↩ add to end · ⌥↩ play next",
       "arg": "play-item:metadata=&uri=x-rincon-cpcontainer%253A1004",
       "valid": true,
       "mods": {

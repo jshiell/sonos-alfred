@@ -214,6 +214,20 @@ func TestPlaylistsFollowFavoritesWithTheSameActions(t *testing.T) {
 	assertItemAction(t, "Alt", *row.Alt, "play-next-item", playlist)
 }
 
+func TestFavoriteAndPlaylistRowsSayWhatEachKeyDoes(t *testing.T) {
+	album := sonos.Item{Title: "Niero:Atlas", URI: "x-rincon-cpcontainer:1004206c"}
+	playlist := sonos.Item{Title: "Focus", URI: "file:///jffs/settings/savedqueues.rsq#1"}
+
+	items := hub.Items(hub.State{Favorites: []sonos.Item{album}, Playlists: []sonos.Item{playlist}}, "")
+
+	const want = "↩ play · ⌘↩ add to end · ⌥↩ play next"
+	for _, title := range []string{"Niero:Atlas", "Focus"} {
+		if got := findItem(t, items, title).Subtitle; got != want {
+			t.Errorf("%s subtitle = %q, want %q", title, got, want)
+		}
+	}
+}
+
 func queueOf(titles ...string) []sonos.Item {
 	var queue []sonos.Item
 	for _, title := range titles {

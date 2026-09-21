@@ -156,11 +156,12 @@ func playableRow(item sonos.Item) Item {
 	add := Action{Verb: "add-item", Payload: payload}
 	playNext := Action{Verb: "play-next-item", Payload: payload}
 	return Item{
-		Title: item.Title,
-		Valid: true,
-		Enter: Action{Verb: "play-item", Payload: payload},
-		Cmd:   &add,
-		Alt:   &playNext,
+		Title:    item.Title,
+		Subtitle: "↩ play · ⌘↩ add to end · ⌥↩ play next",
+		Valid:    true,
+		Enter:    Action{Verb: "play-item", Payload: payload},
+		Cmd:      &add,
+		Alt:      &playNext,
 	}
 }
 
