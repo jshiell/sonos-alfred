@@ -110,7 +110,7 @@ Top level: **now-playing row**, volume row, then Favorites, Playlists, Queue, Ro
 - **Group `ID` prefix is not the coordinator**: Garden Room's coordinator is `RINCON_3333…` but its group ID starts `RINCON_1111…`. Always use the `Coordinator` attribute, never parse the ID.
 - All 6 groups are currently single-member. Multi-member groups are untested against real hardware.
 - Responses from different speakers differ only in non-structural attributes (e.g. `LineInActiveMask`).
-- Fixture: `testdata/zonegroupstate-home-theatre.xml` (real, from the soundbar). It contains MAC-derived UUIDs and private IPs.
+- Fixture: `testdata/zonegroupstate-home-theatre.xml` (from the soundbar, since sanitised: fake speaker IDs, `192.0.2.x` addresses).
 - SSDP timing not yet recorded (S1 output not seen by me).
 
 ### S2 (read-only part) — Browse (2026-09-20)
@@ -120,7 +120,7 @@ Nothing was played or changed; live playback/enqueue/volume tests still need you
 - **Playlists (`SQ:`): empty.** Apple Music playlists are not Sonos playlists, so the Playlists section would be empty for this household.
 - **Queue (`Q:0`): 46 Apple Music tracks** (`x-sonos-http:song%3a…?sid=204&flags=8232&sn=5`). Queue rendering and queue jump are testable as planned.
 - `resMD` is double-escaped inside `Browse`'s `Result`, as expected; the `Trending Now` `resMD` has an empty `dc:title` and an `id`/`parentID` that differ in case, so favorite titles must come from the outer item, not `resMD`.
-- Fixtures: `testdata/browse-favorites-sonos-radio-shortcuts.xml`, `browse-playlists-empty.xml`, `browse-queue-apple-music.xml` (the queue fixture contains your listening history).
+- Fixtures: `testdata/browse-favorites-sonos-radio-shortcuts.xml`, `browse-playlists-empty.xml`, `browse-queue-apple-music.xml` (since sanitised: the queue fixture now holds made-up titles).
 
 ### S2 (live, Dining Room) — playback, queue, volume (2026-09-20)
 Run on Dining Room (`192.0.2.29`) with your consent; volume stayed 12–14 and was restored (also queue source, play mode, sleep timer). Its queue was replaced (1 → 151 tracks). You added two Apple Music album favorites; `FV:2` now has 4 items.
@@ -256,9 +256,10 @@ Where the built workflow differs from, or settles, what is written above.
 - **Rerun cap:** at most 100 reruns (about 30 s at Alfred's 0.3 s rerun). The count lives in the cache directory, because each `filter` run is a new process. A pause of over 10 s starts a fresh count. If the count cannot be saved, `filter` does not ask for a rerun.
 - **Ranking:** rows whose title contains the query come before rows that only have its letters scattered through the title.
 - **Playlists:** the speaker returns Sonos playlists as `<container>` elements, not `<item>`, so the first parser saw none. Fixed from a real capture (`testdata/browse-playlists-one.xml`). Enqueuing a playlist with empty metadata was verified on Dining Room: the speaker replaced the queue with the playlist's tracks. Playing it from Alfred is not yet verified. The "Playlists empty" notes in S1 and S2 were true of that day's household.
-- **Key hints:** favorite and playlist rows say what each key does ("↩ play · ⌘↩ add to end · ⌥↩ play next"). The now-playing row's ⌘ next and ⌥ previous have no hint, because its subtitle shows the track.
+- **Key hints:** favorite and playlist rows say what each key does ("↩ play · ⌘↩ add to end · ⌥↩ play next"). The volume row already had one. The now-playing row's ⌘ next and ⌥ previous have no hint yet.
 - **`{query}` guard:** S3 saw Alfred substitute `{query}` in result text. The renderer splits a literal `{query}` in titles and subtitles with an invisible character, so a track with that name reads the same. Encoded actions already escape the braces.
 - **Speaker IP:** the `SONOS_HOST` workflow setting ("Speaker IP") overrides SSDP discovery; empty means discover. The Alfred configuration format for it is unverified.
+- **Fixtures:** the recorded fixtures are sanitised before they are committed (see `AGENTS.md`), so the raw-capture notes in S1 and S2 above describe what the speakers returned, not what the files now hold.
 - **Packaging:** the checked-in `workflow/info.plist` plus `scripts/package.sh <out>`. The archive holds the arm64 binary and the plist only, with no icon.
 
 ## References
