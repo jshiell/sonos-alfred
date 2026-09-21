@@ -120,6 +120,9 @@ func nowPlayingRow(track sonos.NowPlaying) Item {
 	row := Item{Valid: true, Enter: Action{Verb: "playpause"}, Cmd: &next, Alt: &previous}
 	if track.Title == "" {
 		row.Title = "Nothing playing"
+		if track.Track > 0 { // a track is loaded but says nothing about itself
+			row.Title = "Playing"
+		}
 		return row
 	}
 	row.Title = track.Title

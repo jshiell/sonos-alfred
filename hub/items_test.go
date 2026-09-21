@@ -45,6 +45,15 @@ func TestNowPlayingRowSaysSoWhenNothingIsLoaded(t *testing.T) {
 	}
 }
 
+// AirPlay, for one, gives a track with no title.
+func TestNowPlayingRowSaysPlayingWhenATrackHasNoTitle(t *testing.T) {
+	items := hub.Items(hub.State{NowPlaying: sonos.NowPlaying{Track: 1}}, "")
+
+	if row := items[0]; row.Title != "Playing" || row.Subtitle != "" {
+		t.Errorf("row = %q / %q, want 'Playing' with no subtitle", row.Title, row.Subtitle)
+	}
+}
+
 func TestNowPlayingSubtitleSkipsMissingArtistOrAlbum(t *testing.T) {
 	for name, tc := range map[string]struct {
 		track sonos.NowPlaying
