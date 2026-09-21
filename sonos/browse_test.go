@@ -75,6 +75,23 @@ func TestPlaylistsIsEmptyWhenTheHouseholdHasNoSonosPlaylists(t *testing.T) {
 	}
 }
 
+func TestPlaylistsListsTheSonosPlaylistsTheHouseholdHas(t *testing.T) {
+	speaker := contentDirectorySpeaker(t, "SQ:", "browse-playlists-one.xml") // a real capture: playlists are containers
+
+	playlists, err := sonos.NewClient(speaker.URL).Playlists(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(playlists) != 1 {
+		t.Fatalf("got %d playlists, want 1: %+v", len(playlists), playlists)
+	}
+	test := playlists[0]
+	if test.ID != "SQ:0" || test.Title != "Test" || test.URI != "file:///jffs/settings/savedqueues.rsq#0" {
+		t.Errorf("got %+v, want SQ:0 Test with the saved-queue URI", test)
+	}
+}
+
 func TestQueueListsTracksInOrder(t *testing.T) {
 	speaker := contentDirectorySpeaker(t, "Q:0", "browse-queue-apple-music.xml")
 

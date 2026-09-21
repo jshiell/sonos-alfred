@@ -47,21 +47,26 @@ func (c *Client) browse(ctx context.Context, objectID string) ([]Item, error) {
 	}
 }
 
+// didlEntry is an <item> or a <container>: the speaker lists tracks and favorites as items, playlists as containers.
+type didlEntry struct {
+	ID    string `xml:"id,attr"`
+	Title string `xml:"title"`
+	Res   string `xml:"res"`
+	ResMD string `xml:"resMD"`
+}
+
 func parseDIDL(didl string) ([]Item, error) {
 	var parsed struct {
-		Items []struct {
-			ID    string `xml:"id,attr"`
-			Title string `xml:"title"`
-			Res   string `xml:"res"`
-			ResMD string `xml:"resMD"`
-		} `xml:"item"`
+		Items      []didlEntry `xml:"item"`
+		Containers []didlEntry `xml:"container"`
 	}
 	if err := xml.Unmarshal([]byte(didl), &parsed); err != nil {
 		return nil, err
 	}
-	items := make([]Item, 0, len(parsed.Items))
-	for _, it := range parsed.Items {
-		items = append(items, Item{ID: it.ID, Title: it.Title, URI: it.Res, Metadata: it.ResMD})
+	entries := append(parsed.Items, parsed.Containers...)
+	items := make([]Item, 0, len(entries))
+	for _, entry := range entries {
+		items = append(items, Item{ID: entry.ID, Title: entry.Title, URI: entry.Res, Metadata: entry.ResMD})
 	}
 	return items, nil
 }
