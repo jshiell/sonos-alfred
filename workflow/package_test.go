@@ -84,9 +84,33 @@ func TestPackageHoldsTheBinaryAndTheWorkflowDefinitionAndNothingElse(t *testing.
 type info struct {
 	UserConfiguration []map[string]any `json:"userconfigurationconfig"`
 	Objects           []struct {
+		UID    string         `json:"uid"`
 		Type   string         `json:"type"`
 		Config map[string]any `json:"config"`
 	} `json:"objects"`
+	Connections map[string][]struct {
+		DestinationUID string `json:"destinationuid"`
+	} `json:"connections"`
+}
+
+func (i info) uid(t *testing.T, objectType string) string {
+	t.Helper()
+	for _, object := range i.Objects {
+		if object.Type == objectType {
+			return object.UID
+		}
+	}
+	t.Fatalf("info.plist has no %s", objectType)
+	return ""
+}
+
+// destinations are the uids of the objects that the object with the given uid feeds.
+func (i info) destinations(uid string) []string {
+	var uids []string
+	for _, connection := range i.Connections[uid] {
+		uids = append(uids, connection.DestinationUID)
+	}
+	return uids
 }
 
 func (i info) config(t *testing.T, objectType string) map[string]any {
@@ -177,4 +201,21 @@ func TestSpeakerAddressIsASettingInTheWorkflowConfiguration(t *testing.T) {
 		}
 	}
 	t.Error("info.plist has no SONOS_HOST setting")
+}
+
+func TestChoosingARowFeedsTheScriptFilterToTheRunScriptToTheNotification(t *testing.T) {
+	parsed := readInfo(t, packageWorkflow(t))
+	filter := parsed.uid(t, "alfred.workflow.input.scriptfilter")
+	run := parsed.uid(t, "alfred.workflow.action.script")
+	notification := parsed.uid(t, "alfred.workflow.output.notification")
+
+	if got := parsed.destinations(filter); !slices.Equal(got, []string{run}) {
+		t.Errorf("the Script Filter feeds %v, want only the Run Script %s", got, run)
+	}
+	if got := parsed.destinations(run); !slices.Equal(got, []string{notification}) {
+		t.Errorf("the Run Script feeds %v, want only the Notification %s", got, notification)
+	}
+	if got := parsed.destinations(notification); len(got) != 0 {
+		t.Errorf("the Notification feeds %v, want nothing", got)
+	}
 }
