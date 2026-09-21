@@ -5,7 +5,10 @@
       "subtitle": "Marbles · Marbles (20th Anniversary)",
       "arg": "playpause:",
       "valid": true,
-      "mods": {"cmd": {"arg": "next:", "valid": true}, "alt": {"arg": "previous:", "valid": true}}
+      "mods": {
+        "cmd": {"arg": "next:", "valid": true, "subtitle": "Next track"},
+        "alt": {"arg": "previous:", "valid": true, "subtitle": "Previous track"}
+      }
     },
     {
       "title": "Volume 12",

@@ -25,8 +25,9 @@ type item struct {
 }
 
 type mod struct {
-	Arg   string `json:"arg,omitempty"`
-	Valid bool   `json:"valid"`
+	Arg      string `json:"arg,omitempty"`
+	Subtitle string `json:"subtitle,omitempty"`
+	Valid    bool   `json:"valid"`
 }
 
 // Render is the Script Filter JSON for items. refreshPending asks Alfred to run the filter again shortly.
@@ -45,18 +46,20 @@ func Render(items []hub.Item, refreshPending bool) ([]byte, error) {
 			Subtitle: Displayed(row.Subtitle),
 			Arg:      hub.Encode(row.Enter),
 			Valid:    true,
-			Mods:     map[string]mod{"cmd": modFor(row.Cmd), "alt": modFor(row.Alt)},
+			Mods:     map[string]mod{"cmd": modFor(row.Cmd, row.CmdSubtitle), "alt": modFor(row.Alt, row.AltSubtitle)},
 		})
 	}
 	return json.Marshal(out)
 }
 
 // modFor is the action a modifier key runs, or a disabled key when the row has none: otherwise Alfred would run Enter's.
-func modFor(action *hub.Action) mod {
+// The subtitle is what the row shows while the key is held.
+func modFor(action *hub.Action, subtitle string) mod {
+	held := Displayed(subtitle)
 	if action == nil {
-		return mod{}
+		return mod{Subtitle: held}
 	}
-	return mod{Arg: hub.Encode(*action), Valid: true}
+	return mod{Arg: hub.Encode(*action), Subtitle: held, Valid: true}
 }
 
 // Displayed is text as Alfred should display it. Alfred may fill in {query} wherever it finds the token, so an

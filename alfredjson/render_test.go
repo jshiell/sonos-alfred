@@ -45,6 +45,27 @@ func TestRenderPutsEnterInArgAndCmdAndAltInMods(t *testing.T) {
 	}]}`)
 }
 
+func TestRenderPutsTheHeldSubtitlesInMods(t *testing.T) {
+	next, previous := hub.Action{Verb: "next"}, hub.Action{Verb: "previous"}
+	items := []hub.Item{{
+		Title: "Saxon", Valid: true, Enter: hub.Action{Verb: "playpause"},
+		Cmd: &next, Alt: &previous, CmdSubtitle: "Next track", AltSubtitle: "Previous track",
+	}}
+
+	got, err := alfredjson.Render(items, false)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertJSON(t, got, `{"items":[{
+		"title": "Saxon", "valid": true, "arg": "playpause:",
+		"mods": {
+			"cmd": {"arg": "next:", "valid": true, "subtitle": "Next track"},
+			"alt": {"arg": "previous:", "valid": true, "subtitle": "Previous track"}
+		}
+	}]}`)
+}
+
 func TestRenderDisablesModifiersTheRowHasNoActionFor(t *testing.T) {
 	items := []hub.Item{{Title: "Kitchen", Valid: true, Enter: hub.Action{Verb: "room", Payload: "RINCON_KITCHEN"}}}
 
