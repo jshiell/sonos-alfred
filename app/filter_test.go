@@ -225,6 +225,20 @@ func TestFilterStopsRerunningWhenARefreshNeverFinishes(t *testing.T) {
 	}
 }
 
+func TestFilterAsksForOneHundredRerunsBeforeGivingUp(t *testing.T) {
+	w := newWorkflow(t) // a cold cache that the refresh never fills
+
+	reruns := 0
+	for runFilter(t, w, "").Rerun != 0 {
+		reruns++
+		w.clock.now = w.clock.now.Add(300 * time.Millisecond)
+	}
+
+	if reruns != 100 {
+		t.Errorf("asked for %d reruns, want 100 (about 30 s at Alfred's 0.3 s rerun)", reruns)
+	}
+}
+
 func TestFilterAsksForRerunsAgainAfterAPauseInWhichAlfredWasClosed(t *testing.T) {
 	w := newWorkflow(t)
 	for runFilter(t, w, "").Rerun != 0 { // spend the reruns
