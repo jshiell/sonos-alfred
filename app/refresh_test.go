@@ -99,6 +99,23 @@ func TestRefreshRecordsUnreachableWhenNoSpeakerIsFound(t *testing.T) {
 	}
 }
 
+func TestRefreshRecordsWhyTheSpeakersCouldNotBeRead(t *testing.T) {
+	w := newWorkflow(t)
+	w.env.Discover = func(context.Context) (string, error) { return "", errors.New("no speakers answered") }
+
+	if err := app.Refresh(context.Background(), w.env); err != nil {
+		t.Fatalf("Refresh = %v, want the outcome recorded and no error", err)
+	}
+
+	var got hub.State
+	if !w.cache.Read(app.StateEntry, time.Minute, &got) {
+		t.Fatal("refresh wrote no state")
+	}
+	if got.Problem != "no speakers answered" {
+		t.Errorf("problem = %q, want the error that stopped the refresh", got.Problem)
+	}
+}
+
 func TestRefreshDoesNothingWhileAnotherRefreshIsRunning(t *testing.T) {
 	w := newWorkflow(t)
 	if _, acquired := state.NewRefreshLock(w.env.Dir, w.clock.Now, time.Hour).TryAcquire(); !acquired {

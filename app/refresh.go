@@ -20,7 +20,7 @@ func Refresh(ctx context.Context, env Env) error {
 
 	current, err := readHousehold(ctx, env)
 	if err != nil {
-		current = hub.State{Unreachable: true}
+		current = hub.State{Unreachable: true, Problem: err.Error()}
 	}
 	return state.NewCache(env.Dir, env.Now).Write(StateEntry, current)
 }

@@ -18,13 +18,15 @@ type State struct {
 	Cold bool
 	// Unreachable means the last refresh could not reach any speaker.
 	Unreachable bool
-	NowPlaying  sonos.NowPlaying
-	Volume      int
-	Favorites   []sonos.Item
-	Playlists   []sonos.Item
-	Queue       []sonos.Item
-	Topology    sonos.Topology
-	PlayMode    sonos.PlayMode
+	// Problem is why that refresh failed, in the words of the error that stopped it.
+	Problem    string
+	NowPlaying sonos.NowPlaying
+	Volume     int
+	Favorites  []sonos.Item
+	Playlists  []sonos.Item
+	Queue      []sonos.Item
+	Topology   sonos.Topology
+	PlayMode   sonos.PlayMode
 	// SleepRemaining is how long the sleep timer has left, or 0 when none is running.
 	SleepRemaining time.Duration
 	// Target is the coordinator UUID of the group being controlled.
