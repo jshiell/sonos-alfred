@@ -20,7 +20,7 @@ This revision folds in a plan review (see "Changes from review"). API details ar
 | Targeting | Persistent active group; default = whichever group is playing; room picker overrides |
 | v1 extras | Shuffle / repeat / sleep timer only. **No grouping, scenes, line-in in v1.** |
 | Enter on Favorite/Playlist | Replace queue + play. ⌘ = add to end. ⌥ = play next |
-| Volume | Type a number (`son vol 35`) + ± step items (configurable step, default 5). Group volume default |
+| Volume | Type a number (`son vol 35`) + one "Volume N" row (Enter steps up, ⌥ steps down; fixed step of 5, see Amendments). Group volume default |
 | Feedback | Silent on success; notification on error (mechanism decided by spike S3) |
 | Dev loop | mise task builds `.alfredworkflow`; you import it |
 
@@ -86,7 +86,7 @@ Top level: **now-playing row**, volume row, then Favorites, Playlists, Queue, Ro
 - Escaping: DIDL metadata is XML-escaped inside the SOAP body; over-decoding favorite URIs is a known cause of UPnP 800 faults. Tests must assert exact outgoing bytes.
 
 ## Proposed defaults (my choice, not asked. Object if wrong)
-- Topology cache TTL ~5 min; now-playing ~2 s; lists ~30 s; all refreshed in the background.
+- One cached state (topology, now-playing, volume, lists, play mode, sleep timer) is fresh for 10 s; after that `filter` shows it and spawns a background refresh, and `do` expires it (see Amendments). Replaces the per-entry TTLs first proposed here.
 - Optional "speaker IP" in workflow config as a discovery fallback. `/24` subnet scan deferred (no VPN).
 - Bundle ID `org.infernus.sonos-alfred`; assumes **Alfred 5 + Powerpack** (exact minor version doesn't matter, since `cache` is unused).
 - Sleep timer: presets (15/30/60 min, off).
@@ -248,6 +248,18 @@ The sandbox may block LAN access. If so, I stop and give you the single command 
 - Oversized increments split; item model and arg encoding defined before the menu increments.
 - Verification made measurable. Notification mechanism turned into a spike with an `osascript` fallback.
 - Not adopted as written: the reviewer's unbounded `rerun: 0.3` (now bounded and only while a refresh is pending), and the Alfred 5.5+ version question (moot with `cache` unused).
+
+## Amendments after implementation (2026-09-21)
+Where the built workflow differs from, or settles, what is written above.
+- **Cache:** a single `state` entry, fresh for 10 s, not per-entry TTLs (you confirmed this in Phase 5).
+- **Volume:** one "Volume N" row: Enter steps up 5, ⌥ steps down 5. The step is fixed, not configurable. Typing `vol 35` still offers "Set volume 35".
+- **Rerun cap:** at most 100 reruns (about 30 s at Alfred's 0.3 s rerun). The count lives in the cache directory, because each `filter` run is a new process. A pause of over 10 s starts a fresh count. If the count cannot be saved, `filter` does not ask for a rerun.
+- **Ranking:** rows whose title contains the query come before rows that only have its letters scattered through the title.
+- **Playlists:** the speaker returns Sonos playlists as `<container>` elements, not `<item>`, so the first parser saw none. Fixed from a real capture (`testdata/browse-playlists-one.xml`). Enqueuing a playlist with empty metadata was verified on Dining Room: the speaker replaced the queue with the playlist's tracks. Playing it from Alfred is not yet verified. The "Playlists empty" notes in S1 and S2 were true of that day's household.
+- **Key hints:** favorite and playlist rows say what each key does ("↩ play · ⌘↩ add to end · ⌥↩ play next"). The now-playing row's ⌘ next and ⌥ previous have no hint, because its subtitle shows the track.
+- **`{query}` guard:** S3 saw Alfred substitute `{query}` in result text. The renderer splits a literal `{query}` in titles and subtitles with an invisible character, so a track with that name reads the same. Encoded actions already escape the braces.
+- **Speaker IP:** the `SONOS_HOST` workflow setting ("Speaker IP") overrides SSDP discovery; empty means discover. The Alfred configuration format for it is unverified.
+- **Packaging:** the checked-in `workflow/info.plist` plus `scripts/package.sh <out>`. The archive holds the arm64 binary and the plist only, with no icon.
 
 ## References
 - svrooij Sonos services: https://sonos.svrooij.io/services/
