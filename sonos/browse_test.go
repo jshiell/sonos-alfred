@@ -92,6 +92,22 @@ func TestPlaylistsListsTheSonosPlaylistsTheHouseholdHas(t *testing.T) {
 	}
 }
 
+// The speaker escapes a title twice: once inside the DIDL and again inside the SOAP result.
+func TestQueueTitlesKeepTheirApostrophesAndAmpersands(t *testing.T) {
+	speaker := contentDirectorySpeaker(t, "Q:0", "browse-queue-apple-music.xml")
+
+	queue, err := sonos.NewClient(speaker.URL).Queue(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	for position, want := range map[int]string{12: "Sample Track 12's Shop", 31: "Sample Track 31 & Hope", 32: "Sample Track 32 & Sample"} {
+		if got := queue[position-1].Title; got != want {
+			t.Errorf("track %d title = %q, want %q", position, got, want)
+		}
+	}
+}
+
 func TestQueueListsTracksInOrder(t *testing.T) {
 	speaker := contentDirectorySpeaker(t, "Q:0", "browse-queue-apple-music.xml")
 
