@@ -37,12 +37,12 @@ func Render(items []hub.Item, refreshPending bool) ([]byte, error) {
 	}
 	for _, row := range items {
 		if !row.Valid {
-			out.Items = append(out.Items, item{Title: shown(row.Title), Subtitle: shown(row.Subtitle)})
+			out.Items = append(out.Items, item{Title: Displayed(row.Title), Subtitle: Displayed(row.Subtitle)})
 			continue
 		}
 		out.Items = append(out.Items, item{
-			Title:    shown(row.Title),
-			Subtitle: shown(row.Subtitle),
+			Title:    Displayed(row.Title),
+			Subtitle: Displayed(row.Subtitle),
 			Arg:      hub.Encode(row.Enter),
 			Valid:    true,
 			Mods:     map[string]mod{"cmd": modFor(row.Cmd), "alt": modFor(row.Alt)},
@@ -59,9 +59,9 @@ func modFor(action *hub.Action) mod {
 	return mod{Arg: hub.Encode(*action), Valid: true}
 }
 
-// shown is text as Alfred should display it. Alfred may fill in {query} wherever it finds the token, so an
+// Displayed is text as Alfred should display it. Alfred may fill in {query} wherever it finds the token, so an
 // invisible character splits it: a track called "{query}" still reads that way. Encoded actions are already
 // safe, since Encode escapes the braces.
-func shown(text string) string {
+func Displayed(text string) string {
 	return strings.ReplaceAll(text, "{query}", "{\u200bquery}")
 }

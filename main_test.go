@@ -77,6 +77,18 @@ func TestDoThatFailsPrintsWhyForTheNotificationAndExitsNonZero(t *testing.T) {
 	}
 }
 
+// The notification shows what do prints through {query}, and Alfred may fill in a literal {query} there.
+func TestAFailureMessageNeverCarriesALiteralQueryPlaceholder(t *testing.T) {
+	_, stdout := runCommand(t, "do", "{query}") // the action can't be decoded, and the message quotes it
+
+	if strings.Contains(stdout, "{query}") {
+		t.Errorf("stdout holds a literal {query}: %q", stdout)
+	}
+	if shown := strings.ReplaceAll(stdout, "\u200b", ""); !strings.Contains(shown, "{query}") {
+		t.Errorf("stdout reads %q once invisible characters are ignored, want the message to still quote {query}", shown)
+	}
+}
+
 func TestAnUnknownCommandIsReportedOnStdoutAndExitsNonZero(t *testing.T) {
 	exitCode, stdout := runCommand(t, "bogus")
 

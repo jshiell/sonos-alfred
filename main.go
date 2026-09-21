@@ -83,7 +83,7 @@ func fail(command string, stdout io.Writer, err error) int {
 		}
 		return 0 // a Script Filter that exits non-zero shows nothing at all
 	}
-	fmt.Fprintln(stdout, err)
+	fmt.Fprintln(stdout, alfredjson.Displayed(err.Error()))
 	return 1
 }
 
