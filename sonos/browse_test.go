@@ -4,6 +4,7 @@ import (
 	"context"
 	"html"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -89,6 +90,23 @@ func TestPlaylistsListsTheSonosPlaylistsTheHouseholdHas(t *testing.T) {
 	test := playlists[0]
 	if test.ID != "SQ:0" || test.Title != "Test" || test.URI != "file:///jffs/settings/savedqueues.rsq#0" {
 		t.Errorf("got %+v, want SQ:0 Test with the saved-queue URI", test)
+	}
+}
+
+func TestBrowseKeepsItemsAndContainersInTheOrderTheSpeakerListsThem(t *testing.T) {
+	speaker := contentDirectorySpeaker(t, "Q:0", "browse-mixed.synthetic.xml") // synthetic: no real listing mixes the two
+
+	entries, err := sonos.NewClient(speaker.URL).Queue(context.Background())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	var titles []string
+	for _, entry := range entries {
+		titles = append(titles, entry.Title)
+	}
+	if want := []string{"First", "Second", "Third"}; !slices.Equal(titles, want) {
+		t.Errorf("titles = %v, want %v", titles, want)
 	}
 }
 

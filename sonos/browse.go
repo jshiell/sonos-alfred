@@ -3,7 +3,9 @@ package sonos
 import (
 	"context"
 	"encoding/xml"
+	"io"
 	"strconv"
+	"strings"
 )
 
 // Item is an entry from the speaker's content directory: a favorite, a playlist or a queue track.
@@ -55,20 +57,28 @@ type didlEntry struct {
 	ResMD string `xml:"resMD"`
 }
 
+// parseDIDL reads the entries in the order the speaker lists them.
 func parseDIDL(didl string) ([]Item, error) {
-	var parsed struct {
-		Items      []didlEntry `xml:"item"`
-		Containers []didlEntry `xml:"container"`
-	}
-	if err := xml.Unmarshal([]byte(didl), &parsed); err != nil {
-		return nil, err
-	}
-	entries := append(parsed.Items, parsed.Containers...)
-	items := make([]Item, 0, len(entries))
-	for _, entry := range entries {
+	decoder := xml.NewDecoder(strings.NewReader(didl))
+	items := []Item{}
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			return items, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		start, ok := token.(xml.StartElement)
+		if !ok || (start.Name.Local != "item" && start.Name.Local != "container") {
+			continue
+		}
+		var entry didlEntry
+		if err := decoder.DecodeElement(&entry, &start); err != nil {
+			return nil, err
+		}
 		items = append(items, Item{ID: entry.ID, Title: entry.Title, URI: entry.Res, Metadata: entry.ResMD})
 	}
-	return items, nil
 }
 
 // Playlists lists the household's Sonos playlists.
