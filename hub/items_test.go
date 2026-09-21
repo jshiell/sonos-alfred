@@ -369,6 +369,25 @@ func TestRepeatRowFollowsShuffleShowsTheModeAndCyclesOnEnter(t *testing.T) {
 	}
 }
 
+// Sonos answers a play-mode change with UPnP error 712 while a radio stream or AirPlay is the source.
+func TestShuffleAndRepeatRowsAreHiddenWhileAStreamPlays(t *testing.T) {
+	state := hub.State{
+		NowPlaying: sonos.NowPlaying{Track: 1, Title: "Groove Salad"}, // a stream reports Track 1
+		Queue:      queueOf("Saxon", "Quartz"),
+	}
+
+	got := titles(hub.Items(state, ""))
+
+	for _, title := range got {
+		if strings.HasPrefix(title, "Shuffle") || strings.HasPrefix(title, "Repeat") {
+			t.Errorf("titles = %v, want no shuffle or repeat row", got)
+		}
+	}
+	if !slices.Contains(got, "Sleep in 15 minutes") {
+		t.Errorf("titles = %v, want the other rows kept", got)
+	}
+}
+
 func TestSleepPresetsFollowRepeatAndSetTheTimerOnEnter(t *testing.T) {
 	items := hub.Items(hub.State{}, "")
 
