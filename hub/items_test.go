@@ -471,3 +471,11 @@ func TestUnreachableSonosShowsOnlyThatWhetherOrNotThereIsCachedData(t *testing.T
 		})
 	}
 }
+
+func TestUnreachableSonosSaysWhyTheSpeakersCouldNotBeRead(t *testing.T) {
+	items := hub.Items(hub.State{Unreachable: true, Problem: "EOF"}, "")
+
+	if len(items) != 1 || items[0].Subtitle != "Couldn't read the speakers: EOF" {
+		t.Errorf("items = %+v, want one row whose subtitle says why", items)
+	}
+}

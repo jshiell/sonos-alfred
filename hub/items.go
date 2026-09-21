@@ -16,7 +16,7 @@ import (
 type State struct {
 	// Cold means nothing has been cached yet: the first run, before a refresh has finished.
 	Cold bool
-	// Unreachable means the last refresh could not reach any speaker.
+	// Unreachable means the last refresh could not read the speakers.
 	Unreachable bool
 	// Problem is why that refresh failed, in the words of the error that stopped it.
 	Problem    string
@@ -48,7 +48,11 @@ type Item struct {
 // Items returns the rows for a query, in display order.
 func Items(state State, query string) []Item {
 	if state.Unreachable {
-		return []Item{{Title: "Can't reach Sonos", Subtitle: "Check the speakers are on and on this network"}}
+		subtitle := "Check the speakers are on and on this network"
+		if state.Problem != "" {
+			subtitle = "Couldn't read the speakers: " + state.Problem
+		}
+		return []Item{{Title: "Can't reach Sonos", Subtitle: subtitle}}
 	}
 	if state.Cold {
 		return []Item{{Title: "Loading Sonos…"}}
